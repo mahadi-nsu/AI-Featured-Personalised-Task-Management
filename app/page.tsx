@@ -5,8 +5,8 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background border-2 border-red-500">
-      <main className="container mx-auto py-8 border-2 border-red-500">
+    <div className="min-h-screen bg-background ">
+      <main className="container mx-auto py-8 ">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold text-center">Task Management</h1>
           <Link
@@ -17,7 +17,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <Tabs defaultValue="today" className="w-full border-2 border-red-500">
+        <Tabs defaultValue="today" className="w-full ">
           <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
             <TabsTrigger value="today">Today&apos;s Tasks</TabsTrigger>
             <TabsTrigger value="date">Tasks by Date</TabsTrigger>

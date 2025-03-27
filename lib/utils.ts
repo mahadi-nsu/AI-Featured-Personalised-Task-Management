@@ -25,4 +25,6 @@ export type Task = {
   createdAt: string;
   order?: number; // Optional order property for sorting
   priority?: TaskPriority; // Optional priority property
+  estimatedHours?: number; // Optional hours estimation
+  estimatedMinutes?: number; // Optional minutes estimation
 };

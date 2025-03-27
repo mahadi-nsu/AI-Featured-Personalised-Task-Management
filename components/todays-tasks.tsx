@@ -11,6 +11,7 @@ import {
   ListTodo,
   Trello,
   Tag,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,6 +108,8 @@ function SortableTaskItem({
   const [editedPriority, setEditedPriority] = useState<
     TaskPriority | undefined
   >(undefined);
+  const [editedHours, setEditedHours] = useState<number>(0);
+  const [editedMinutes, setEditedMinutes] = useState<number>(0);
 
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {
@@ -132,6 +135,14 @@ function SortableTaskItem({
     }
   };
 
+  const getEstimatedTimeDisplay = (task: Task) => {
+    if (!task.estimatedHours && !task.estimatedMinutes) return null;
+    const parts = [];
+    if (task.estimatedHours) parts.push(`${task.estimatedHours}h`);
+    if (task.estimatedMinutes) parts.push(`${task.estimatedMinutes}m`);
+    return parts.join(" ");
+  };
+
   const updateTaskStatus = (task: Task, status: TaskStatus) => {
     const updatedTasks = updateTask(task.id, { status });
     setTasks(updatedTasks);
@@ -153,6 +164,8 @@ function SortableTaskItem({
     setEditingTask(task);
     setEditedTitle(task.title);
     setEditedPriority(task.priority);
+    setEditedHours(task.estimatedHours || 0);
+    setEditedMinutes(task.estimatedMinutes || 0);
   };
 
   const saveEdit = () => {
@@ -160,6 +173,8 @@ function SortableTaskItem({
       const updatedTasks = updateTask(editingTask.id, {
         title: editedTitle.trim(),
         priority: editedPriority,
+        estimatedHours: editedHours || undefined,
+        estimatedMinutes: editedMinutes || undefined,
       });
       setEditingTask(null);
       setTasks(updatedTasks);
@@ -188,16 +203,24 @@ function SortableTaskItem({
               >
                 {task.title}
               </span>
-              {task.priority && (
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
-                    task.priority
-                  )}`}
-                >
-                  <Tag className="h-3 w-3 mr-1" />
-                  {task.priority}
-                </span>
-              )}
+              <div className="flex flex-wrap gap-2">
+                {task.priority && (
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
+                      task.priority
+                    )}`}
+                  >
+                    <Tag className="h-3 w-3 mr-1" />
+                    {task.priority}
+                  </span>
+                )}
+                {getEstimatedTimeDisplay(task) && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                    <Clock className="h-3 w-3 mr-1" />
+                    {getEstimatedTimeDisplay(task)}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -323,6 +346,40 @@ function SortableTaskItem({
                 )}
               </div>
             </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center">
+                <Clock className="h-4 w-4 mr-1" />
+                Estimated Time
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={editedHours}
+                    onChange={(e) =>
+                      setEditedHours(parseInt(e.target.value) || 0)
+                    }
+                    className="w-20"
+                  />
+                  <span className="text-sm whitespace-nowrap">hours</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={editedMinutes}
+                    onChange={(e) =>
+                      setEditedMinutes(parseInt(e.target.value) || 0)
+                    }
+                    className="w-20"
+                  />
+                  <span className="text-sm whitespace-nowrap">minutes</span>
+                </div>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingTask(null)}>
@@ -393,6 +450,8 @@ function KanbanTaskItem({
   const [editedPriority, setEditedPriority] = useState<
     TaskPriority | undefined
   >(undefined);
+  const [editedHours, setEditedHours] = useState<number>(0);
+  const [editedMinutes, setEditedMinutes] = useState<number>(0);
 
   const getPriorityColor = (priority?: TaskPriority) => {
     switch (priority) {
@@ -405,6 +464,14 @@ function KanbanTaskItem({
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
+  };
+
+  const getEstimatedTimeDisplay = (task: Task) => {
+    if (!task.estimatedHours && !task.estimatedMinutes) return null;
+    const parts = [];
+    if (task.estimatedHours) parts.push(`${task.estimatedHours}h`);
+    if (task.estimatedMinutes) parts.push(`${task.estimatedMinutes}m`);
+    return parts.join(" ");
   };
 
   const startDelete = (task: Task) => {
@@ -423,6 +490,8 @@ function KanbanTaskItem({
     setEditingTask(task);
     setEditedTitle(task.title);
     setEditedPriority(task.priority);
+    setEditedHours(task.estimatedHours || 0);
+    setEditedMinutes(task.estimatedMinutes || 0);
   };
 
   const saveEdit = () => {
@@ -430,6 +499,8 @@ function KanbanTaskItem({
       const updatedTasks = updateTask(editingTask.id, {
         title: editedTitle.trim(),
         priority: editedPriority,
+        estimatedHours: editedHours || undefined,
+        estimatedMinutes: editedMinutes || undefined,
       });
       setEditingTask(null);
       setTasks(updatedTasks);
@@ -456,8 +527,8 @@ function KanbanTaskItem({
                 >
                   {task.title}
                 </span>
-                {task.priority && (
-                  <div className="mt-1">
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {task.priority && (
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
                         task.priority
@@ -466,8 +537,14 @@ function KanbanTaskItem({
                       <Tag className="h-3 w-3 mr-1" />
                       {task.priority}
                     </span>
-                  </div>
-                )}
+                  )}
+                  {getEstimatedTimeDisplay(task) && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {getEstimatedTimeDisplay(task)}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-1 pt-1">
                 <div className="flex-1"></div>
@@ -574,6 +651,40 @@ function KanbanTaskItem({
                     No Priority
                   </Button>
                 )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center">
+                <Clock className="h-4 w-4 mr-1" />
+                Estimated Time
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={editedHours}
+                    onChange={(e) =>
+                      setEditedHours(parseInt(e.target.value) || 0)
+                    }
+                    className="w-20"
+                  />
+                  <span className="text-sm whitespace-nowrap">hours</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={editedMinutes}
+                    onChange={(e) =>
+                      setEditedMinutes(parseInt(e.target.value) || 0)
+                    }
+                    className="w-20"
+                  />
+                  <span className="text-sm whitespace-nowrap">minutes</span>
+                </div>
               </div>
             </div>
           </div>
@@ -709,6 +820,8 @@ export function TodaysTasks() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [priority, setPriority] = useState<TaskPriority | undefined>(undefined);
+  const [estimatedHours, setEstimatedHours] = useState<number>(0);
+  const [estimatedMinutes, setEstimatedMinutes] = useState<number>(0);
   const { register, handleSubmit, reset } = useForm<{ title: string }>();
 
   // Setup sensors for drag and drop
@@ -792,17 +905,18 @@ export function TodaysTasks() {
       date: formattedDate,
       createdAt: new Date().toISOString(),
       priority: priority,
+      estimatedHours: estimatedHours || undefined,
+      estimatedMinutes: estimatedMinutes || undefined,
     };
 
-    console.log("Creating new task for today:", newTask);
-
-    // Use the centralized storage
     const updatedTasks = addTask(newTask);
     setTasks(updatedTasks);
 
     // Reset form
     reset();
     setPriority(undefined);
+    setEstimatedHours(0);
+    setEstimatedMinutes(0);
   };
 
   // Handle drag start
@@ -1046,67 +1160,103 @@ export function TodaysTasks() {
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground flex items-center">
-                <Tag className="h-4 w-4 mr-1" />
-                Priority:
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    priority === TaskPriority.HIGH ? "default" : "outline"
-                  }
-                  className={
-                    priority === TaskPriority.HIGH
-                      ? "bg-red-500 hover:bg-red-600"
-                      : ""
-                  }
-                  onClick={() => setPriority(TaskPriority.HIGH)}
-                >
-                  High
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    priority === TaskPriority.MEDIUM ? "default" : "outline"
-                  }
-                  className={
-                    priority === TaskPriority.MEDIUM
-                      ? "bg-yellow-500 hover:bg-yellow-600"
-                      : ""
-                  }
-                  onClick={() => setPriority(TaskPriority.MEDIUM)}
-                >
-                  Medium
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    priority === TaskPriority.LOW ? "default" : "outline"
-                  }
-                  className={
-                    priority === TaskPriority.LOW
-                      ? "bg-green-500 hover:bg-green-600"
-                      : ""
-                  }
-                  onClick={() => setPriority(TaskPriority.LOW)}
-                >
-                  Low
-                </Button>
-                {priority && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <span className="text-sm text-muted-foreground flex items-center">
+                  <Tag className="h-4 w-4 mr-1" />
+                  Priority:
+                </span>
+                <div className="flex flex-wrap gap-2">
                   <Button
                     type="button"
                     size="sm"
-                    variant="ghost"
-                    onClick={() => setPriority(undefined)}
+                    variant={
+                      priority === TaskPriority.HIGH ? "default" : "outline"
+                    }
+                    className={
+                      priority === TaskPriority.HIGH
+                        ? "bg-red-500 hover:bg-red-600"
+                        : ""
+                    }
+                    onClick={() => setPriority(TaskPriority.HIGH)}
                   >
-                    Clear
+                    High
                   </Button>
-                )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={
+                      priority === TaskPriority.MEDIUM ? "default" : "outline"
+                    }
+                    className={
+                      priority === TaskPriority.MEDIUM
+                        ? "bg-yellow-500 hover:bg-yellow-600"
+                        : ""
+                    }
+                    onClick={() => setPriority(TaskPriority.MEDIUM)}
+                  >
+                    Medium
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={
+                      priority === TaskPriority.LOW ? "default" : "outline"
+                    }
+                    className={
+                      priority === TaskPriority.LOW
+                        ? "bg-green-500 hover:bg-green-600"
+                        : ""
+                    }
+                    onClick={() => setPriority(TaskPriority.LOW)}
+                  >
+                    Low
+                  </Button>
+                  {priority && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setPriority(undefined)}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-sm text-muted-foreground flex items-center">
+                  <Clock className="h-4 w-4 mr-1" />
+                  Estimated Time:
+                </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={estimatedHours}
+                      onChange={(e) =>
+                        setEstimatedHours(parseInt(e.target.value) || 0)
+                      }
+                      className="w-20"
+                    />
+                    <span className="text-sm whitespace-nowrap">hours</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={estimatedMinutes}
+                      onChange={(e) =>
+                        setEstimatedMinutes(parseInt(e.target.value) || 0)
+                      }
+                      className="w-20"
+                    />
+                    <span className="text-sm whitespace-nowrap">minutes</span>
+                  </div>
+                </div>
               </div>
             </div>
           </form>
