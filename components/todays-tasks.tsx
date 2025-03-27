@@ -8,6 +8,8 @@ import {
   Pencil,
   CalendarClock,
   GripVertical,
+  ListTodo,
+  Trello,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +54,9 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragOverlay,
+  closestCorners,
+  DragStartEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -61,6 +66,10 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { cn } from "@/lib/utils";
+
+// View modes
+type ViewMode = "list" | "kanban";
 
 // Sortable task item component
 function SortableTaskItem({ task }: { task: Task }) {
@@ -88,8 +97,9 @@ function SortableTaskItem({ task }: { task: Task }) {
   };
 
   const updateTaskStatus = (task: Task, status: TaskStatus) => {
-    const updatedTasks = updateTask(task.id, { status });
+    updateTask(task.id, { status });
     // We'll handle state update in parent component
+    window.location.reload(); // Temporary solution for state refresh
   };
 
   const startDelete = (task: Task) => {
@@ -98,7 +108,7 @@ function SortableTaskItem({ task }: { task: Task }) {
 
   const confirmDelete = () => {
     if (deletingTask) {
-      const updatedTasks = deleteTask(deletingTask.id);
+      deleteTask(deletingTask.id);
       setDeletingTask(null);
       // We'll handle state update in parent component
       window.location.reload(); // Temporary solution for state refresh
@@ -112,7 +122,7 @@ function SortableTaskItem({ task }: { task: Task }) {
 
   const saveEdit = () => {
     if (editingTask && editedTitle.trim()) {
-      const updatedTasks = updateTask(editingTask.id, {
+      updateTask(editingTask.id, {
         title: editedTitle.trim(),
       });
       setEditingTask(null);
@@ -239,8 +249,160 @@ function SortableTaskItem({ task }: { task: Task }) {
   );
 }
 
+// Kanban Task Item component
+function KanbanTaskItem({
+  task,
+  tasks,
+  setTasks,
+}: {
+  task: Task;
+  tasks: Task[];
+  setTasks: (tasks: Task[]) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deletingTask, setDeletingTask] = useState<Task | null>(null);
+  const [editedTitle, setEditedTitle] = useState("");
+
+  const startDelete = (task: Task) => {
+    setDeletingTask(task);
+  };
+
+  const confirmDelete = () => {
+    if (deletingTask) {
+      const updatedTasks = deleteTask(deletingTask.id);
+      setDeletingTask(null);
+      setTasks(updatedTasks);
+    }
+  };
+
+  const startEditing = (task: Task) => {
+    setEditingTask(task);
+    setEditedTitle(task.title);
+  };
+
+  const saveEdit = () => {
+    if (editingTask && editedTitle.trim()) {
+      const updatedTasks = updateTask(editingTask.id, {
+        title: editedTitle.trim(),
+      });
+      setEditingTask(null);
+      setTasks(updatedTasks);
+    }
+  };
+
+  return (
+    <>
+      <div ref={setNodeRef} style={style} className="touch-none">
+        <Card className="p-3 mb-2 group">
+          <div className="flex items-start gap-2">
+            <div className="flex-1">
+              <div
+                {...attributes}
+                {...listeners}
+                className="cursor-grab active:cursor-grabbing w-full pb-2 px-1 text-sm font-medium"
+              >
+                <span
+                  className={`${
+                    task.status === TaskStatus.DONE
+                      ? "line-through text-muted-foreground"
+                      : ""
+                  }`}
+                >
+                  {task.title}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 pt-2 border-t">
+                <div className="flex-1"></div>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => startEditing(task)}
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => startDelete(task)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={editingTask !== null}
+        onOpenChange={() => setEditingTask(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Task</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={editedTitle}
+              onChange={(e) => setEditedTitle(e.target.value)}
+              placeholder="Edit task title..."
+              className="w-full"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingTask(null)}>
+              Cancel
+            </Button>
+            <Button onClick={saveEdit}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deletingTask !== null}
+        onOpenChange={() => setDeletingTask(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              task &quot;{deletingTask?.title}&quot;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
 export function TodaysTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [activeId, setActiveId] = useState<string | null>(null);
   const { register, handleSubmit, reset } = useForm<{ title: string }>();
 
   // Setup sensors for drag and drop
@@ -299,6 +461,17 @@ export function TodaysTasks() {
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
 
+  // Group tasks by status for Kanban view
+  const untouchedTasks = todaysTasks.filter(
+    (task) => task.status === TaskStatus.UNTOUCHED
+  );
+  const inProgressTasks = todaysTasks.filter(
+    (task) => task.status === TaskStatus.IN_PROGRESS
+  );
+  const doneTasks = todaysTasks.filter(
+    (task) => task.status === TaskStatus.DONE
+  );
+
   const createTask = (data: { title: string }) => {
     // Format today's date consistently (yyyy-MM-dd)
     const today = new Date();
@@ -323,32 +496,73 @@ export function TodaysTasks() {
     reset();
   };
 
-  // Handle drag end event
+  // Handle drag start
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    setActiveId(active.id as string);
+  };
+
+  // Handle drag end for list view
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
 
-    if (over && active.id !== over.id) {
+    if (!over) return;
+
+    if (active.id !== over.id) {
       const activeId = String(active.id);
       const overId = String(over.id);
 
-      // Find the tasks in the array
-      const activeIndex = todaysTasks.findIndex((task) => task.id === activeId);
-      const overIndex = todaysTasks.findIndex((task) => task.id === overId);
+      // Handle list mode drag end
+      if (viewMode === "list") {
+        // Find the tasks in the array
+        const activeIndex = todaysTasks.findIndex(
+          (task) => task.id === activeId
+        );
+        const overIndex = todaysTasks.findIndex((task) => task.id === overId);
 
-      if (activeIndex !== -1 && overIndex !== -1) {
-        // Get the new order of task IDs
-        const newTasks = arrayMove(todaysTasks, activeIndex, overIndex);
-        const newTaskIds = newTasks.map((task) => task.id);
+        if (activeIndex !== -1 && overIndex !== -1) {
+          // Get the new order of task IDs
+          const newTasks = arrayMove(todaysTasks, activeIndex, overIndex);
+          const newTaskIds = newTasks.map((task) => task.id);
 
-        // Get today's date in yyyy-MM-dd format
-        const today = new Date();
-        const todayStr = `${today.getFullYear()}-${String(
-          today.getMonth() + 1
-        ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+          // Get today's date in yyyy-MM-dd format
+          const today = new Date();
+          const todayStr = `${today.getFullYear()}-${String(
+            today.getMonth() + 1
+          ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
-        // Update the order in storage
-        const updatedTasks = updateTaskOrder(todayStr, newTaskIds);
-        setTasks(updatedTasks);
+          // Update the order in storage
+          const updatedTasks = updateTaskOrder(todayStr, newTaskIds);
+          setTasks(updatedTasks);
+        }
+      }
+      // Handle kanban mode drag end - change status based on column
+      else {
+        const task = tasks.find((t) => t.id === activeId);
+        if (!task) return;
+
+        let newStatus: TaskStatus;
+
+        // Determine the target column (status) based on the over.id
+        if (over.id === "untouched-column") {
+          newStatus = TaskStatus.UNTOUCHED;
+        } else if (over.id === "inprogress-column") {
+          newStatus = TaskStatus.IN_PROGRESS;
+        } else if (over.id === "done-column") {
+          newStatus = TaskStatus.DONE;
+        } else {
+          // If dragging over another card, get that card's status
+          const overTask = tasks.find((t) => t.id === overId);
+          if (!overTask) return;
+          newStatus = overTask.status;
+        }
+
+        // If status has changed, update it
+        if (task.status !== newStatus) {
+          const updatedTasks = updateTask(task.id, { status: newStatus });
+          setTasks(updatedTasks);
+        }
       }
     }
   };
@@ -358,14 +572,36 @@ export function TodaysTasks() {
       <div className="max-w-2xl mx-auto p-6 space-y-8">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold">Today&apos;s Tasks</h2>
-          <div className="flex items-center text-sm text-muted-foreground">
-            <CalendarClock className="h-4 w-4 mr-1" />
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center text-sm text-muted-foreground">
+              <CalendarClock className="h-4 w-4 mr-1" />
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </div>
+            <div className="flex border rounded-md overflow-hidden">
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="sm"
+                className="rounded-none"
+                onClick={() => setViewMode("list")}
+              >
+                <ListTodo className="h-4 w-4 mr-1" />
+                List
+              </Button>
+              <Button
+                variant={viewMode === "kanban" ? "default" : "ghost"}
+                size="sm"
+                className="rounded-none"
+                onClick={() => setViewMode("kanban")}
+              >
+                <Trello className="h-4 w-4 mr-1" />
+                Board
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -390,10 +626,12 @@ export function TodaysTasks() {
             <div className="text-center py-8 text-muted-foreground">
               No tasks for today. Add one to get started!
             </div>
-          ) : (
+          ) : viewMode === "list" ? (
+            // List View
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
             >
               <SortableContext
@@ -406,6 +644,109 @@ export function TodaysTasks() {
                   ))}
                 </div>
               </SortableContext>
+            </DndContext>
+          ) : (
+            // Kanban Board View
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCorners}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Untouched Column */}
+                <div
+                  id="untouched-column"
+                  className="bg-background border rounded-md shadow-sm overflow-hidden"
+                >
+                  <div className="p-3 bg-muted font-medium border-b">
+                    <div className="flex items-center">
+                      <span className="text-gray-500 w-3 h-3 rounded-full mr-2"></span>
+                      <span>Untouched</span>
+                      <span className="ml-auto bg-muted-foreground/20 px-2 py-0.5 rounded-full text-xs">
+                        {untouchedTasks.length}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-2 min-h-[300px]">
+                    <SortableContext
+                      items={untouchedTasks.map((task) => task.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {untouchedTasks.map((task) => (
+                        <KanbanTaskItem
+                          key={task.id}
+                          task={task}
+                          tasks={tasks}
+                          setTasks={setTasks}
+                        />
+                      ))}
+                    </SortableContext>
+                  </div>
+                </div>
+
+                {/* In Progress Column */}
+                <div
+                  id="inprogress-column"
+                  className="bg-background border rounded-md shadow-sm overflow-hidden"
+                >
+                  <div className="p-3 bg-muted font-medium border-b">
+                    <div className="flex items-center">
+                      <span className="text-blue-500 w-3 h-3 rounded-full mr-2"></span>
+                      <span>In Progress</span>
+                      <span className="ml-auto bg-muted-foreground/20 px-2 py-0.5 rounded-full text-xs">
+                        {inProgressTasks.length}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-2 min-h-[300px]">
+                    <SortableContext
+                      items={inProgressTasks.map((task) => task.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {inProgressTasks.map((task) => (
+                        <KanbanTaskItem
+                          key={task.id}
+                          task={task}
+                          tasks={tasks}
+                          setTasks={setTasks}
+                        />
+                      ))}
+                    </SortableContext>
+                  </div>
+                </div>
+
+                {/* Done Column */}
+                <div
+                  id="done-column"
+                  className="bg-background border rounded-md shadow-sm overflow-hidden"
+                >
+                  <div className="p-3 bg-muted font-medium border-b">
+                    <div className="flex items-center">
+                      <span className="bg-green-500 w-3 h-3 rounded-full mr-2"></span>
+                      <span>Done</span>
+                      <span className="ml-auto bg-muted-foreground/20 px-2 py-0.5 rounded-full text-xs">
+                        {doneTasks.length}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-2 min-h-[300px]">
+                    <SortableContext
+                      items={doneTasks.map((task) => task.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {doneTasks.map((task) => (
+                        <KanbanTaskItem
+                          key={task.id}
+                          task={task}
+                          tasks={tasks}
+                          setTasks={setTasks}
+                        />
+                      ))}
+                    </SortableContext>
+                  </div>
+                </div>
+              </div>
             </DndContext>
           )}
         </div>
