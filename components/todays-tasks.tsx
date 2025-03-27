@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import {
   Plus,
@@ -76,6 +76,23 @@ import { cn } from "@/lib/utils";
 // View modes
 type ViewMode = "list" | "kanban";
 
+// Add this helper function at the top level
+function calculateRemainingTime(task: Task): number | null {
+  if (!task.estimatedHours && !task.estimatedMinutes) return null;
+  if (task.status !== TaskStatus.IN_PROGRESS) return null;
+
+  const totalMinutes =
+    (task.estimatedHours || 0) * 60 + (task.estimatedMinutes || 0);
+  const startTime = task.startedAt ? new Date(task.startedAt).getTime() : null;
+
+  if (!startTime) return null;
+
+  const elapsedMinutes = (Date.now() - startTime) / (1000 * 60);
+  const remainingMinutes = totalMinutes - elapsedMinutes;
+
+  return Math.max(0, remainingMinutes);
+}
+
 // Sortable task item component
 function SortableTaskItem({
   task,
@@ -110,6 +127,8 @@ function SortableTaskItem({
   >(undefined);
   const [editedHours, setEditedHours] = useState<number>(0);
   const [editedMinutes, setEditedMinutes] = useState<number>(0);
+  const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {
@@ -181,10 +200,58 @@ function SortableTaskItem({
     }
   };
 
+  // Add countdown effect
+  useEffect(() => {
+    if (task.status === TaskStatus.IN_PROGRESS) {
+      // Set start time if not already set
+      if (!task.startedAt) {
+        const updatedTasks = updateTask(task.id, {
+          startedAt: new Date().toISOString(),
+        });
+        setTasks(updatedTasks);
+      }
+
+      // Start countdown
+      const interval = setInterval(() => {
+        const remaining = calculateRemainingTime(task);
+        setRemainingTime(remaining);
+
+        // Play sound when 5 minutes or less remain
+        if (remaining !== null && remaining <= 5 && remaining > 0) {
+          audioRef.current?.play();
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    } else {
+      setRemainingTime(null);
+    }
+  }, [
+    task.status,
+    task.id,
+    task.startedAt,
+    task.estimatedHours,
+    task.estimatedMinutes,
+  ]);
+
+  const formatTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.floor(minutes % 60);
+    return `${hours}h ${mins}m`;
+  };
+
   return (
     <>
+      <audio ref={audioRef} src="/notification.mp3" />
       <div ref={setNodeRef} style={style} className="touch-none">
-        <Card className="p-4 flex items-center justify-between group">
+        <Card
+          className={cn(
+            "p-4 flex items-center justify-between group",
+            remainingTime !== null &&
+              remainingTime <= 5 &&
+              "bg-green-50 border-green-200"
+          )}
+        >
           <div className="flex items-center gap-4 flex-1">
             <div
               {...attributes}
@@ -218,6 +285,19 @@ function SortableTaskItem({
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
                     <Clock className="h-3 w-3 mr-1" />
                     {getEstimatedTimeDisplay(task)}
+                  </span>
+                )}
+                {remainingTime !== null && (
+                  <span
+                    className={cn(
+                      "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                      remainingTime <= 5
+                        ? "bg-red-100 text-red-800 border-red-200"
+                        : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                    )}
+                  >
+                    <Clock className="h-3 w-3 mr-1" />
+                    {formatTime(remainingTime)} remaining
                   </span>
                 )}
               </div>
@@ -452,6 +532,8 @@ function KanbanTaskItem({
   >(undefined);
   const [editedHours, setEditedHours] = useState<number>(0);
   const [editedMinutes, setEditedMinutes] = useState<number>(0);
+  const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const getPriorityColor = (priority?: TaskPriority) => {
     switch (priority) {
@@ -507,10 +589,58 @@ function KanbanTaskItem({
     }
   };
 
+  // Add countdown effect
+  useEffect(() => {
+    if (task.status === TaskStatus.IN_PROGRESS) {
+      // Set start time if not already set
+      if (!task.startedAt) {
+        const updatedTasks = updateTask(task.id, {
+          startedAt: new Date().toISOString(),
+        });
+        setTasks(updatedTasks);
+      }
+
+      // Start countdown
+      const interval = setInterval(() => {
+        const remaining = calculateRemainingTime(task);
+        setRemainingTime(remaining);
+
+        // Play sound when 5 minutes or less remain
+        if (remaining !== null && remaining <= 5 && remaining > 0) {
+          audioRef.current?.play();
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    } else {
+      setRemainingTime(null);
+    }
+  }, [
+    task.status,
+    task.id,
+    task.startedAt,
+    task.estimatedHours,
+    task.estimatedMinutes,
+  ]);
+
+  const formatTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.floor(minutes % 60);
+    return `${hours}h ${mins}m`;
+  };
+
   return (
     <>
+      <audio ref={audioRef} src="/notification.mp3" />
       <div ref={setNodeRef} style={style} className="touch-none">
-        <Card className="p-3 mb-2 group">
+        <Card
+          className={cn(
+            "p-3 mb-2 group",
+            remainingTime !== null &&
+              remainingTime <= 5 &&
+              "bg-green-50 border-green-200"
+          )}
+        >
           <div className="flex items-start gap-2">
             <div className="flex-1">
               <div
@@ -542,6 +672,19 @@ function KanbanTaskItem({
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
                       <Clock className="h-3 w-3 mr-1" />
                       {getEstimatedTimeDisplay(task)}
+                    </span>
+                  )}
+                  {remainingTime !== null && (
+                    <span
+                      className={cn(
+                        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                        remainingTime <= 5
+                          ? "bg-red-100 text-red-800 border-red-200"
+                          : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                      )}
+                    >
+                      <Clock className="h-3 w-3 mr-1" />
+                      {formatTime(remainingTime)} remaining
                     </span>
                   )}
                 </div>

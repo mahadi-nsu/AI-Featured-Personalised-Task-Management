@@ -17,14 +17,15 @@ export enum TaskPriority {
   LOW = "Low",
 }
 
-export type Task = {
+export interface Task {
   id: string;
   title: string;
   status: TaskStatus;
   date: string;
   createdAt: string;
-  order?: number; // Optional order property for sorting
-  priority?: TaskPriority; // Optional priority property
-  estimatedHours?: number; // Optional hours estimation
-  estimatedMinutes?: number; // Optional minutes estimation
-};
+  startedAt?: string;
+  priority?: TaskPriority;
+  estimatedHours?: number;
+  estimatedMinutes?: number;
+  order?: number;
+}
