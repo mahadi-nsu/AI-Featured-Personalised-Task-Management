@@ -74,6 +74,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // View modes
 type ViewMode = "list" | "kanban";
@@ -272,10 +273,10 @@ function SortableTaskItem({
             remainingTime !== null &&
               remainingTime <= 5 &&
               remainingTime > 0 &&
-              "bg-green-50 border-green-200",
+              "bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800",
             remainingTime !== null &&
               remainingTime <= 0 &&
-              "bg-red-50 border-red-200"
+              "bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800"
           )}
         >
           <div className="flex items-center gap-4 flex-1">
@@ -318,10 +319,10 @@ function SortableTaskItem({
                     className={cn(
                       "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
                       remainingTime <= 0
-                        ? "bg-red-100 text-red-800 border-red-200"
+                        ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800"
                         : remainingTime <= 5
-                        ? "bg-red-100 text-red-800 border-red-200"
-                        : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                        ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800"
+                        : "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800"
                     )}
                   >
                     <Clock className="h-3 w-3 mr-1" />
@@ -732,10 +733,10 @@ function KanbanTaskItem({
             remainingTime !== null &&
               remainingTime <= 5 &&
               remainingTime > 0 &&
-              "bg-green-50 border-green-200",
+              "bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800",
             remainingTime !== null &&
               remainingTime <= 0 &&
-              "bg-red-50 border-red-200"
+              "bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800"
           )}
         >
           <div className="flex items-start gap-2">
@@ -776,10 +777,10 @@ function KanbanTaskItem({
                       className={cn(
                         "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
                         remainingTime <= 0
-                          ? "bg-red-100 text-red-800 border-red-200"
+                          ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800"
                           : remainingTime <= 5
-                          ? "bg-red-100 text-red-800 border-red-200"
-                          : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                          ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800"
+                          : "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800"
                       )}
                     >
                       <Clock className="h-3 w-3 mr-1" />
@@ -1453,6 +1454,7 @@ export function TodaysTasks() {
                 day: "numeric",
               })}
             </div>
+            <ThemeToggle />
             <div className="flex border rounded-md overflow-hidden">
               <Button
                 variant={viewMode === "list" ? "default" : "ghost"}
@@ -1591,7 +1593,7 @@ export function TodaysTasks() {
         </Card>
 
         {/* Search and Filter Section */}
-        <Card className="p-4 shadow-sm bg-blue-50/50 border-blue-100">
+        <Card className="p-4 shadow-sm bg-blue-50/50 dark:bg-blue-950/50 border-blue-100 dark:border-blue-900">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search */}
             <div className="relative">
@@ -1600,7 +1602,7 @@ export function TodaysTasks() {
                 placeholder="Search tasks..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-white/80"
+                className="pl-9 bg-white/80 dark:bg-gray-900/80"
               />
             </div>
 
@@ -1611,7 +1613,7 @@ export function TodaysTasks() {
                 setStatusFilter(value as TaskStatus | "all")
               }
             >
-              <SelectTrigger className="bg-white/80">
+              <SelectTrigger className="bg-white/80 dark:bg-gray-900/80">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -1631,7 +1633,7 @@ export function TodaysTasks() {
                 setPriorityFilter(value as TaskPriority | "all")
               }
             >
-              <SelectTrigger className="bg-white/80">
+              <SelectTrigger className="bg-white/80 dark:bg-gray-900/80">
                 <SelectValue placeholder="Filter by priority" />
               </SelectTrigger>
               <SelectContent>
