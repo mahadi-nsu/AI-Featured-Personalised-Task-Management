@@ -17,4 +17,5 @@ export type Task = {
   status: TaskStatus;
   date: string;
   createdAt: string;
+  order?: number; // Optional order property for sorting
 };

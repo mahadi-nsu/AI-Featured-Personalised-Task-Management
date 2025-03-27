@@ -41,12 +41,13 @@ export const loadTasks = (): Task[] => {
         today.getMonth() + 1
       ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
-      const migratedTasks: Task[] = todos.map((todo) => ({
+      const migratedTasks: Task[] = todos.map((todo, index) => ({
         id: todo.id,
         title: todo.title,
         status: todo.isComplete ? TaskStatus.DONE : TaskStatus.UNTOUCHED,
         date: formattedDate,
         createdAt: todo.createdAt,
+        order: index, // Add order property based on array index
       }));
 
       // Save migrated tasks
@@ -80,7 +81,21 @@ export const saveTasks = (tasks: Task[]): void => {
 // Add a new task
 export const addTask = (task: Task): Task[] => {
   const tasks = loadTasks();
-  const updatedTasks = [...tasks, task];
+
+  // Find the highest order value for the same date group
+  const tasksForSameDate = tasks.filter((t) => t.date === task.date);
+  const highestOrder =
+    tasksForSameDate.length > 0
+      ? Math.max(...tasksForSameDate.map((t) => t.order || 0))
+      : -1;
+
+  // Add new task with the highest order + 1
+  const taskWithOrder = {
+    ...task,
+    order: highestOrder + 1,
+  };
+
+  const updatedTasks = [...tasks, taskWithOrder];
   saveTasks(updatedTasks);
   return updatedTasks;
 };
@@ -101,4 +116,46 @@ export const deleteTask = (taskId: string): Task[] => {
   const updatedTasks = tasks.filter((task) => task.id !== taskId);
   saveTasks(updatedTasks);
   return updatedTasks;
+};
+
+// Reorder tasks
+export const reorderTasks = (tasks: Task[]): Task[] => {
+  // Ensure all tasks have an order property
+  const tasksWithOrder = tasks.map((task, index) => ({
+    ...task,
+    order: task.order !== undefined ? task.order : index,
+  }));
+
+  saveTasks(tasksWithOrder);
+  return tasksWithOrder;
+};
+
+// Update task order after drag and drop
+export const updateTaskOrder = (
+  dateStr: string,
+  newOrder: string[]
+): Task[] => {
+  const tasks = loadTasks();
+
+  // Get tasks for the current date and other dates separately
+  const tasksForDate = tasks.filter((task) => task.date === dateStr);
+  const otherTasks = tasks.filter((task) => task.date !== dateStr);
+
+  // Create a map of task IDs to their new order
+  const orderMap = newOrder.reduce((map, id, index) => {
+    map[id] = index;
+    return map;
+  }, {} as Record<string, number>);
+
+  // Update the order of tasks for the current date
+  const updatedDateTasks = tasksForDate.map((task) => ({
+    ...task,
+    order:
+      orderMap[task.id] !== undefined ? orderMap[task.id] : task.order || 0,
+  }));
+
+  // Merge and save all tasks
+  const allUpdatedTasks = [...otherTasks, ...updatedDateTasks];
+  saveTasks(allUpdatedTasks);
+  return allUpdatedTasks;
 };
