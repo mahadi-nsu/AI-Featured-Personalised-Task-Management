@@ -1660,11 +1660,11 @@ export function TodaysTasks() {
               onDragEnd={handleDragEnd}
             >
               <SortableContext
-                items={todaysTasks.map((task) => task.id)}
+                items={filteredTasks.map((task) => task.id)}
                 strategy={verticalListSortingStrategy}
               >
                 <div className="space-y-2">
-                  {todaysTasks.map((task) => (
+                  {filteredTasks.map((task) => (
                     <SortableTaskItem
                       key={task.id}
                       task={task}
