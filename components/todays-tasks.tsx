@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Task, TaskStatus } from "@/lib/utils";
+import { loadTasks, addTask, updateTask, deleteTask } from "@/lib/taskStorage";
 
 export function TodaysTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -39,48 +40,69 @@ export function TodaysTasks() {
   const [editedTitle, setEditedTitle] = useState("");
   const { register, handleSubmit, reset } = useForm<{ title: string }>();
 
-  // Load tasks from localStorage on component mount
+  // Load tasks on component mount
   useEffect(() => {
-    const savedTasks = localStorage.getItem("tasks");
-    if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
-    }
+    const tasks = loadTasks();
+    console.log("TodaysTasks - Loaded tasks:", tasks);
+    setTasks(tasks);
   }, []);
-
-  // Save tasks to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
 
   // Get today's tasks
   const todaysTasks = tasks.filter((task) => {
-    const taskDate = new Date(task.date);
-    const today = new Date();
+    if (!task.date) return false;
 
-    return (
-      taskDate.getDate() === today.getDate() &&
-      taskDate.getMonth() === today.getMonth() &&
-      taskDate.getFullYear() === today.getFullYear()
-    );
+    try {
+      const taskDate = new Date(task.date);
+      const today = new Date();
+
+      // Check if the date is valid
+      if (isNaN(taskDate.getTime())) {
+        console.error("Invalid task date:", task.date);
+        return false;
+      }
+
+      // Reset time part for comparison
+      taskDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+
+      return (
+        taskDate.getDate() === today.getDate() &&
+        taskDate.getMonth() === today.getMonth() &&
+        taskDate.getFullYear() === today.getFullYear()
+      );
+    } catch (error) {
+      console.error("Error comparing dates:", error);
+      return false;
+    }
   });
 
   const createTask = (data: { title: string }) => {
-    const today = new Date().toISOString().split("T")[0];
+    // Format today's date consistently (yyyy-MM-dd)
+    const today = new Date();
+    const formattedDate = `${today.getFullYear()}-${String(
+      today.getMonth() + 1
+    ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
     const newTask: Task = {
       id: crypto.randomUUID(),
       title: data.title,
       status: TaskStatus.UNTOUCHED,
-      date: today,
+      date: formattedDate,
       createdAt: new Date().toISOString(),
     };
 
-    setTasks([...tasks, newTask]);
+    console.log("Creating new task for today:", newTask);
+
+    // Use the centralized storage
+    const updatedTasks = addTask(newTask);
+    setTasks(updatedTasks);
+
     reset();
   };
 
   const updateTaskStatus = (task: Task, status: TaskStatus) => {
-    setTasks(tasks.map((t) => (t.id === task.id ? { ...t, status } : t)));
+    const updatedTasks = updateTask(task.id, { status });
+    setTasks(updatedTasks);
   };
 
   const startDelete = (task: Task) => {
@@ -89,7 +111,8 @@ export function TodaysTasks() {
 
   const confirmDelete = () => {
     if (deletingTask) {
-      setTasks(tasks.filter((task) => task.id !== deletingTask.id));
+      const updatedTasks = deleteTask(deletingTask.id);
+      setTasks(updatedTasks);
       setDeletingTask(null);
     }
   };
@@ -101,13 +124,10 @@ export function TodaysTasks() {
 
   const saveEdit = () => {
     if (editingTask && editedTitle.trim()) {
-      setTasks(
-        tasks.map((task) =>
-          task.id === editingTask.id
-            ? { ...task, title: editedTitle.trim() }
-            : task
-        )
-      );
+      const updatedTasks = updateTask(editingTask.id, {
+        title: editedTitle.trim(),
+      });
+      setTasks(updatedTasks);
       setEditingTask(null);
     }
   };

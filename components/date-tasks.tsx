@@ -39,6 +39,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Task, TaskStatus } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import {
+  loadTasks,
+  saveTasks,
+  addTask,
+  updateTask,
+  deleteTask,
+} from "@/lib/taskStorage";
 
 // Interface for old todos format
 interface OldTodo {
@@ -56,53 +63,45 @@ export function DateTasks() {
   const [editedTitle, setEditedTitle] = useState("");
   const { register, handleSubmit, reset } = useForm<{ title: string }>();
 
-  // Load tasks and migrate old todos on component mount
+  // Load tasks on component mount
   useEffect(() => {
-    const savedTasks = localStorage.getItem("tasks");
-
-    // If we already have tasks in the new format, use those
-    if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
-    } else {
-      // Check for old todos and migrate them if they exist
-      const oldTodos = localStorage.getItem("todos");
-      if (oldTodos) {
-        const todos: OldTodo[] = JSON.parse(oldTodos);
-        const migratedTasks: Task[] = todos.map((todo) => ({
-          id: todo.id,
-          title: todo.title,
-          status: todo.isComplete ? TaskStatus.DONE : TaskStatus.UNTOUCHED,
-          date: new Date().toISOString().split("T")[0], // Set to today's date
-          createdAt: todo.createdAt,
-        }));
-
-        setTasks(migratedTasks);
-
-        // Clear old todos after migration to prevent duplicates
-        localStorage.removeItem("todos");
-      }
-    }
+    const tasks = loadTasks();
+    console.log("DateTasks - Loaded tasks:", tasks);
+    setTasks(tasks);
   }, []);
-
-  // Save tasks to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
 
   // Get tasks for selected date
   const dateTasksOnly = tasks.filter((task) => {
-    const taskDate = new Date(task.date);
-    const selectedDate = new Date(date);
+    if (!task.date) return false;
 
-    return (
-      taskDate.getDate() === selectedDate.getDate() &&
-      taskDate.getMonth() === selectedDate.getMonth() &&
-      taskDate.getFullYear() === selectedDate.getFullYear()
-    );
+    try {
+      const taskDate = new Date(task.date);
+      const selectedDate = new Date(date);
+
+      // Check if the date is valid
+      if (isNaN(taskDate.getTime())) {
+        console.error("Invalid task date:", task.date);
+        return false;
+      }
+
+      // Reset time part for comparison
+      taskDate.setHours(0, 0, 0, 0);
+      selectedDate.setHours(0, 0, 0, 0);
+
+      return (
+        taskDate.getDate() === selectedDate.getDate() &&
+        taskDate.getMonth() === selectedDate.getMonth() &&
+        taskDate.getFullYear() === selectedDate.getFullYear()
+      );
+    } catch (error) {
+      console.error("Error comparing dates:", error);
+      return false;
+    }
   });
 
   const createTask = (data: { title: string }) => {
-    const formattedDate = date.toISOString().split("T")[0];
+    // Format the date consistently
+    const formattedDate = format(date, "yyyy-MM-dd");
 
     const newTask: Task = {
       id: crypto.randomUUID(),
@@ -112,12 +111,18 @@ export function DateTasks() {
       createdAt: new Date().toISOString(),
     };
 
-    setTasks([...tasks, newTask]);
+    console.log("Creating new task:", newTask);
+
+    // Use the centralized storage
+    const updatedTasks = addTask(newTask);
+    setTasks(updatedTasks);
+
     reset();
   };
 
   const updateTaskStatus = (task: Task, status: TaskStatus) => {
-    setTasks(tasks.map((t) => (t.id === task.id ? { ...t, status } : t)));
+    const updatedTasks = updateTask(task.id, { status });
+    setTasks(updatedTasks);
   };
 
   const startDelete = (task: Task) => {
@@ -126,7 +131,8 @@ export function DateTasks() {
 
   const confirmDelete = () => {
     if (deletingTask) {
-      setTasks(tasks.filter((task) => task.id !== deletingTask.id));
+      const updatedTasks = deleteTask(deletingTask.id);
+      setTasks(updatedTasks);
       setDeletingTask(null);
     }
   };
@@ -138,13 +144,10 @@ export function DateTasks() {
 
   const saveEdit = () => {
     if (editingTask && editedTitle.trim()) {
-      setTasks(
-        tasks.map((task) =>
-          task.id === editingTask.id
-            ? { ...task, title: editedTitle.trim() }
-            : task
-        )
-      );
+      const updatedTasks = updateTask(editingTask.id, {
+        title: editedTitle.trim(),
+      });
+      setTasks(updatedTasks);
       setEditingTask(null);
     }
   };
