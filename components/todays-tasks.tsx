@@ -57,6 +57,9 @@ import {
   DragOverlay,
   closestCorners,
   DragStartEvent,
+  useDraggable,
+  useDroppable,
+  DragOverEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -259,12 +262,19 @@ function KanbanTaskItem({
   tasks: Task[];
   setTasks: (tasks: Task[]) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: task.id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.5 : 1,
   };
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -399,6 +409,46 @@ function KanbanTaskItem({
   );
 }
 
+// Add a new droppable container component for columns
+function KanbanColumn({
+  id,
+  title,
+  tasks,
+  color,
+  children,
+}: {
+  id: string;
+  title: string;
+  tasks: Task[];
+  color: string;
+  children: React.ReactNode;
+}) {
+  // Set up the column as a droppable area
+  const { setNodeRef, isOver } = useDroppable({
+    id,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`bg-background border rounded-md shadow-sm overflow-hidden ${
+        isOver ? "ring-2 ring-primary ring-opacity-50" : ""
+      }`}
+    >
+      <div className="p-3 bg-muted font-medium border-b">
+        <div className="flex items-center">
+          <span className={`${color} w-3 h-3 rounded-full mr-2`}></span>
+          <span>{title}</span>
+          <span className="ml-auto bg-muted-foreground/20 px-2 py-0.5 rounded-full text-xs">
+            {tasks.length}
+          </span>
+        </div>
+      </div>
+      <div className="p-2 min-h-[300px]">{children}</div>
+    </div>
+  );
+}
+
 export function TodaysTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -502,6 +552,53 @@ export function TodaysTasks() {
     setActiveId(active.id as string);
   };
 
+  // Handle drag over event - to add visual feedback
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+
+    if (!over) return;
+
+    // Skip processing if dragging over itself
+    if (active.id === over.id) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    // Find the active task
+    const activeTask = tasks.find((t) => t.id === activeId);
+    if (!activeTask) return;
+
+    // Check if we're dragging over a column
+    if (
+      ["untouched-column", "inprogress-column", "done-column"].includes(overId)
+    ) {
+      let targetStatus: TaskStatus;
+
+      if (overId === "untouched-column") {
+        targetStatus = TaskStatus.UNTOUCHED;
+      } else if (overId === "inprogress-column") {
+        targetStatus = TaskStatus.IN_PROGRESS;
+      } else {
+        targetStatus = TaskStatus.DONE;
+      }
+
+      // We don't need to update the status here - just provide visual feedback
+      // The status will be updated in handleDragEnd
+      console.log(
+        `Dragging task over column: ${overId} (status: ${targetStatus})`
+      );
+    }
+    // If dragging over another task, check if it's in a different column
+    else {
+      const overTask = tasks.find((t) => t.id === overId);
+      if (overTask && activeTask.status !== overTask.status) {
+        console.log(
+          `Dragging between columns via task: from ${activeTask.status} to ${overTask.status}`
+        );
+      }
+    }
+  };
+
   // Handle drag end for list view
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -512,6 +609,8 @@ export function TodaysTasks() {
     if (active.id !== over.id) {
       const activeId = String(active.id);
       const overId = String(over.id);
+
+      console.log(`Drag ended: ${activeId} over ${overId}`);
 
       // Handle list mode drag end
       if (viewMode === "list") {
@@ -545,11 +644,11 @@ export function TodaysTasks() {
         let newStatus: TaskStatus;
 
         // Determine the target column (status) based on the over.id
-        if (over.id === "untouched-column") {
+        if (overId === "untouched-column") {
           newStatus = TaskStatus.UNTOUCHED;
-        } else if (over.id === "inprogress-column") {
+        } else if (overId === "inprogress-column") {
           newStatus = TaskStatus.IN_PROGRESS;
-        } else if (over.id === "done-column") {
+        } else if (overId === "done-column") {
           newStatus = TaskStatus.DONE;
         } else {
           // If dragging over another card, get that card's status
@@ -557,6 +656,8 @@ export function TodaysTasks() {
           if (!overTask) return;
           newStatus = overTask.status;
         }
+
+        console.log(`Changing task status from ${task.status} to ${newStatus}`);
 
         // If status has changed, update it
         if (task.status !== newStatus) {
@@ -651,101 +752,75 @@ export function TodaysTasks() {
               sensors={sensors}
               collisionDetection={closestCorners}
               onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
             >
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Untouched Column */}
-                <div
+                <KanbanColumn
                   id="untouched-column"
-                  className="bg-background border rounded-md shadow-sm overflow-hidden"
+                  title="Untouched"
+                  tasks={untouchedTasks}
+                  color="text-gray-500"
                 >
-                  <div className="p-3 bg-muted font-medium border-b">
-                    <div className="flex items-center">
-                      <span className="text-gray-500 w-3 h-3 rounded-full mr-2"></span>
-                      <span>Untouched</span>
-                      <span className="ml-auto bg-muted-foreground/20 px-2 py-0.5 rounded-full text-xs">
-                        {untouchedTasks.length}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-2 min-h-[300px]">
-                    <SortableContext
-                      items={untouchedTasks.map((task) => task.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {untouchedTasks.map((task) => (
-                        <KanbanTaskItem
-                          key={task.id}
-                          task={task}
-                          tasks={tasks}
-                          setTasks={setTasks}
-                        />
-                      ))}
-                    </SortableContext>
-                  </div>
-                </div>
+                  <SortableContext
+                    items={untouchedTasks.map((task) => task.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {untouchedTasks.map((task) => (
+                      <KanbanTaskItem
+                        key={task.id}
+                        task={task}
+                        tasks={tasks}
+                        setTasks={setTasks}
+                      />
+                    ))}
+                  </SortableContext>
+                </KanbanColumn>
 
                 {/* In Progress Column */}
-                <div
+                <KanbanColumn
                   id="inprogress-column"
-                  className="bg-background border rounded-md shadow-sm overflow-hidden"
+                  title="In Progress"
+                  tasks={inProgressTasks}
+                  color="text-blue-500"
                 >
-                  <div className="p-3 bg-muted font-medium border-b">
-                    <div className="flex items-center">
-                      <span className="text-blue-500 w-3 h-3 rounded-full mr-2"></span>
-                      <span>In Progress</span>
-                      <span className="ml-auto bg-muted-foreground/20 px-2 py-0.5 rounded-full text-xs">
-                        {inProgressTasks.length}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-2 min-h-[300px]">
-                    <SortableContext
-                      items={inProgressTasks.map((task) => task.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {inProgressTasks.map((task) => (
-                        <KanbanTaskItem
-                          key={task.id}
-                          task={task}
-                          tasks={tasks}
-                          setTasks={setTasks}
-                        />
-                      ))}
-                    </SortableContext>
-                  </div>
-                </div>
+                  <SortableContext
+                    items={inProgressTasks.map((task) => task.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {inProgressTasks.map((task) => (
+                      <KanbanTaskItem
+                        key={task.id}
+                        task={task}
+                        tasks={tasks}
+                        setTasks={setTasks}
+                      />
+                    ))}
+                  </SortableContext>
+                </KanbanColumn>
 
                 {/* Done Column */}
-                <div
+                <KanbanColumn
                   id="done-column"
-                  className="bg-background border rounded-md shadow-sm overflow-hidden"
+                  title="Done"
+                  tasks={doneTasks}
+                  color="bg-green-500"
                 >
-                  <div className="p-3 bg-muted font-medium border-b">
-                    <div className="flex items-center">
-                      <span className="bg-green-500 w-3 h-3 rounded-full mr-2"></span>
-                      <span>Done</span>
-                      <span className="ml-auto bg-muted-foreground/20 px-2 py-0.5 rounded-full text-xs">
-                        {doneTasks.length}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-2 min-h-[300px]">
-                    <SortableContext
-                      items={doneTasks.map((task) => task.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {doneTasks.map((task) => (
-                        <KanbanTaskItem
-                          key={task.id}
-                          task={task}
-                          tasks={tasks}
-                          setTasks={setTasks}
-                        />
-                      ))}
-                    </SortableContext>
-                  </div>
-                </div>
+                  <SortableContext
+                    items={doneTasks.map((task) => task.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {doneTasks.map((task) => (
+                      <KanbanTaskItem
+                        key={task.id}
+                        task={task}
+                        tasks={tasks}
+                        setTasks={setTasks}
+                      />
+                    ))}
+                  </SortableContext>
+                </KanbanColumn>
               </div>
             </DndContext>
           )}
