@@ -12,6 +12,7 @@ import {
   Trello,
   Tag,
   Clock,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,6 +129,7 @@ function SortableTaskItem({
   const [editedHours, setEditedHours] = useState<number>(0);
   const [editedMinutes, setEditedMinutes] = useState<number>(0);
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  const [isNotificationEnabled, setIsNotificationEnabled] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const getStatusColor = (status: TaskStatus) => {
@@ -211,13 +213,30 @@ function SortableTaskItem({
         setTasks(updatedTasks);
       }
 
+      // Check initial remaining time and play sound if needed
+      const initialRemaining = calculateRemainingTime(task);
+      setRemainingTime(initialRemaining);
+      if (
+        initialRemaining !== null &&
+        initialRemaining <= 5 &&
+        initialRemaining > 0 &&
+        isNotificationEnabled
+      ) {
+        audioRef.current?.play();
+      }
+
       // Start countdown
       const interval = setInterval(() => {
         const remaining = calculateRemainingTime(task);
         setRemainingTime(remaining);
 
-        // Play sound when 5 minutes or less remain
-        if (remaining !== null && remaining <= 5 && remaining > 0) {
+        // Play sound when 5 minutes or less remain and notification is enabled
+        if (
+          remaining !== null &&
+          remaining <= 5 &&
+          remaining > 0 &&
+          isNotificationEnabled
+        ) {
           audioRef.current?.play();
         }
       }, 1000);
@@ -225,6 +244,7 @@ function SortableTaskItem({
       return () => clearInterval(interval);
     } else {
       setRemainingTime(null);
+      setIsNotificationEnabled(true); // Reset notification state when task status changes
     }
   }, [
     task.status,
@@ -232,6 +252,7 @@ function SortableTaskItem({
     task.startedAt,
     task.estimatedHours,
     task.estimatedMinutes,
+    isNotificationEnabled,
   ]);
 
   const formatTime = (minutes: number) => {
@@ -312,6 +333,33 @@ function SortableTaskItem({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {remainingTime !== null &&
+              remainingTime <= 5 &&
+              remainingTime > 0 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsNotificationEnabled(false)}
+                  className={cn(
+                    "text-red-500 hover:text-red-600 hover:bg-red-50",
+                    !isNotificationEnabled && "opacity-50"
+                  )}
+                  title={
+                    isNotificationEnabled
+                      ? "Stop notification sound"
+                      : "Notifications disabled"
+                  }
+                >
+                  <div className="relative">
+                    <Bell className="h-4 w-4" />
+                    {!isNotificationEnabled && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-4 h-[2px] bg-red-500 rotate-45 transform origin-center" />
+                      </div>
+                    )}
+                  </div>
+                </Button>
+              )}
             <Select
               value={task.status}
               onValueChange={(value) =>
@@ -541,7 +589,19 @@ function KanbanTaskItem({
   const [editedHours, setEditedHours] = useState<number>(0);
   const [editedMinutes, setEditedMinutes] = useState<number>(0);
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  const [isNotificationEnabled, setIsNotificationEnabled] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const getStatusColor = (status: TaskStatus) => {
+    switch (status) {
+      case TaskStatus.DONE:
+        return "text-green-500";
+      case TaskStatus.IN_PROGRESS:
+        return "text-blue-500";
+      default:
+        return "text-gray-500";
+    }
+  };
 
   const getPriorityColor = (priority?: TaskPriority) => {
     switch (priority) {
@@ -562,6 +622,11 @@ function KanbanTaskItem({
     if (task.estimatedHours) parts.push(`${task.estimatedHours}h`);
     if (task.estimatedMinutes) parts.push(`${task.estimatedMinutes}m`);
     return parts.join(" ");
+  };
+
+  const updateTaskStatus = (task: Task, status: TaskStatus) => {
+    const updatedTasks = updateTask(task.id, { status });
+    setTasks(updatedTasks);
   };
 
   const startDelete = (task: Task) => {
@@ -608,13 +673,30 @@ function KanbanTaskItem({
         setTasks(updatedTasks);
       }
 
+      // Check initial remaining time and play sound if needed
+      const initialRemaining = calculateRemainingTime(task);
+      setRemainingTime(initialRemaining);
+      if (
+        initialRemaining !== null &&
+        initialRemaining <= 5 &&
+        initialRemaining > 0 &&
+        isNotificationEnabled
+      ) {
+        audioRef.current?.play();
+      }
+
       // Start countdown
       const interval = setInterval(() => {
         const remaining = calculateRemainingTime(task);
         setRemainingTime(remaining);
 
-        // Play sound when 5 minutes or less remain
-        if (remaining !== null && remaining <= 5 && remaining > 0) {
+        // Play sound when 5 minutes or less remain and notification is enabled
+        if (
+          remaining !== null &&
+          remaining <= 5 &&
+          remaining > 0 &&
+          isNotificationEnabled
+        ) {
           audioRef.current?.play();
         }
       }, 1000);
@@ -622,6 +704,7 @@ function KanbanTaskItem({
       return () => clearInterval(interval);
     } else {
       setRemainingTime(null);
+      setIsNotificationEnabled(true); // Reset notification state when task status changes
     }
   }, [
     task.status,
@@ -629,6 +712,7 @@ function KanbanTaskItem({
     task.startedAt,
     task.estimatedHours,
     task.estimatedMinutes,
+    isNotificationEnabled,
   ]);
 
   const formatTime = (minutes: number) => {
@@ -706,25 +790,72 @@ function KanbanTaskItem({
                 </div>
               </div>
               <div className="flex items-center gap-1 pt-1">
-                <div className="flex-1"></div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => startEditing(task)}
+                {remainingTime !== null &&
+                  remainingTime <= 5 &&
+                  remainingTime > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsNotificationEnabled(false)}
+                      className={cn(
+                        "text-red-500 hover:text-red-600 hover:bg-red-50 h-6 w-6",
+                        !isNotificationEnabled && "opacity-50"
+                      )}
+                      title={
+                        isNotificationEnabled
+                          ? "Stop notification sound"
+                          : "Notifications disabled"
+                      }
+                    >
+                      <div className="relative">
+                        <Bell className="h-3 w-3" />
+                        {!isNotificationEnabled && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-3 h-[1.5px] bg-red-500 rotate-45 transform origin-center" />
+                          </div>
+                        )}
+                      </div>
+                    </Button>
+                  )}
+                <Select
+                  value={task.status}
+                  onValueChange={(value) =>
+                    updateTaskStatus(task, value as TaskStatus)
+                  }
+                >
+                  <SelectTrigger
+                    className={`w-[140px] ${getStatusColor(
+                      task.status as TaskStatus
+                    )}`}
                   >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => startDelete(task)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={TaskStatus.UNTOUCHED}>
+                      Untouched
+                    </SelectItem>
+                    <SelectItem value={TaskStatus.IN_PROGRESS}>
+                      In Progress
+                    </SelectItem>
+                    <SelectItem value={TaskStatus.DONE}>Done</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => startEditing(task)}
+                  className="h-6 w-6"
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => startDelete(task)}
+                  className="h-6 w-6"
+                >
+                  <Trash2 className="h-3 w-3 text-destructive" />
+                </Button>
               </div>
             </div>
           </div>
