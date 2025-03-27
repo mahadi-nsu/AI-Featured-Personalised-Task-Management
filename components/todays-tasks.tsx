@@ -249,7 +249,11 @@ function SortableTaskItem({
             "p-4 flex items-center justify-between group",
             remainingTime !== null &&
               remainingTime <= 5 &&
-              "bg-green-50 border-green-200"
+              remainingTime > 0 &&
+              "bg-green-50 border-green-200",
+            remainingTime !== null &&
+              remainingTime <= 0 &&
+              "bg-red-50 border-red-200"
           )}
         >
           <div className="flex items-center gap-4 flex-1">
@@ -291,13 +295,17 @@ function SortableTaskItem({
                   <span
                     className={cn(
                       "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
-                      remainingTime <= 5
+                      remainingTime <= 0
+                        ? "bg-red-100 text-red-800 border-red-200"
+                        : remainingTime <= 5
                         ? "bg-red-100 text-red-800 border-red-200"
                         : "bg-yellow-100 text-yellow-800 border-yellow-200"
                     )}
                   >
                     <Clock className="h-3 w-3 mr-1" />
-                    {formatTime(remainingTime)} remaining
+                    {remainingTime <= 0
+                      ? "Time's Up!"
+                      : `${formatTime(remainingTime)} remaining`}
                   </span>
                 )}
               </div>
@@ -638,7 +646,11 @@ function KanbanTaskItem({
             "p-3 mb-2 group",
             remainingTime !== null &&
               remainingTime <= 5 &&
-              "bg-green-50 border-green-200"
+              remainingTime > 0 &&
+              "bg-green-50 border-green-200",
+            remainingTime !== null &&
+              remainingTime <= 0 &&
+              "bg-red-50 border-red-200"
           )}
         >
           <div className="flex items-start gap-2">
@@ -678,13 +690,17 @@ function KanbanTaskItem({
                     <span
                       className={cn(
                         "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
-                        remainingTime <= 5
+                        remainingTime <= 0
+                          ? "bg-red-100 text-red-800 border-red-200"
+                          : remainingTime <= 5
                           ? "bg-red-100 text-red-800 border-red-200"
                           : "bg-yellow-100 text-yellow-800 border-yellow-200"
                       )}
                     >
                       <Clock className="h-3 w-3 mr-1" />
-                      {formatTime(remainingTime)} remaining
+                      {remainingTime <= 0
+                        ? "Time's Up!"
+                        : `${formatTime(remainingTime)} remaining`}
                     </span>
                   )}
                 </div>
