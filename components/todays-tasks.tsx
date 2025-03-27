@@ -677,33 +677,94 @@ export function TodaysTasks() {
           setTasks(updatedTasks);
         }
       }
-      // Handle kanban mode drag end - change status based on column
+      // Handle kanban mode drag end
       else {
         const task = tasks.find((t) => t.id === activeId);
         if (!task) return;
 
-        let newStatus: TaskStatus;
+        // Check if we're dragging over a column or an item
+        if (
+          ["untouched-column", "inprogress-column", "done-column"].includes(
+            overId
+          )
+        ) {
+          // Dragging to a column - change status
+          let newStatus: TaskStatus;
 
-        // Determine the target column (status) based on the over.id
-        if (overId === "untouched-column") {
-          newStatus = TaskStatus.UNTOUCHED;
-        } else if (overId === "inprogress-column") {
-          newStatus = TaskStatus.IN_PROGRESS;
-        } else if (overId === "done-column") {
-          newStatus = TaskStatus.DONE;
+          if (overId === "untouched-column") {
+            newStatus = TaskStatus.UNTOUCHED;
+          } else if (overId === "inprogress-column") {
+            newStatus = TaskStatus.IN_PROGRESS;
+          } else {
+            newStatus = TaskStatus.DONE;
+          }
+
+          // If status has changed, update it
+          if (task.status !== newStatus) {
+            const updatedTasks = updateTask(task.id, { status: newStatus });
+            setTasks(updatedTasks);
+          }
         } else {
-          // If dragging over another card, get that card's status
+          // Dragging over another task
           const overTask = tasks.find((t) => t.id === overId);
           if (!overTask) return;
-          newStatus = overTask.status;
-        }
 
-        console.log(`Changing task status from ${task.status} to ${newStatus}`);
+          // If dragging between different columns (status change)
+          if (task.status !== overTask.status) {
+            const updatedTasks = updateTask(task.id, {
+              status: overTask.status,
+            });
+            setTasks(updatedTasks);
+          }
+          // If reordering within the same column
+          else {
+            // Get tasks with the same status
+            const columnTasks = todaysTasks.filter(
+              (t) => t.status === task.status
+            );
 
-        // If status has changed, update it
-        if (task.status !== newStatus) {
-          const updatedTasks = updateTask(task.id, { status: newStatus });
-          setTasks(updatedTasks);
+            // Find indices within the column
+            const activeIndex = columnTasks.findIndex((t) => t.id === activeId);
+            const overIndex = columnTasks.findIndex((t) => t.id === overId);
+
+            if (activeIndex !== -1 && overIndex !== -1) {
+              // Get the new order using arrayMove
+              const newColumnTasks = arrayMove(
+                columnTasks,
+                activeIndex,
+                overIndex
+              );
+
+              // Create a new array with all tasks, maintain order for other statuses
+              const reorderedTasks = [...tasks];
+
+              // Update the order of each task in the affected column
+              newColumnTasks.forEach((t, idx) => {
+                const taskIndex = reorderedTasks.findIndex(
+                  (rt) => rt.id === t.id
+                );
+                if (taskIndex !== -1) {
+                  reorderedTasks[taskIndex] = {
+                    ...reorderedTasks[taskIndex],
+                    order: idx,
+                  };
+                }
+              });
+
+              // Get today's date in yyyy-MM-dd format
+              const today = new Date();
+              const todayStr = `${today.getFullYear()}-${String(
+                today.getMonth() + 1
+              ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+              // Update the order in storage
+              const updatedTasks = updateTaskOrder(
+                todayStr,
+                reorderedTasks.map((t) => t.id)
+              );
+              setTasks(updatedTasks);
+            }
+          }
         }
       }
     }
