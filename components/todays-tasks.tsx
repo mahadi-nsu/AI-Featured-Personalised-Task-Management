@@ -191,7 +191,7 @@ function SortableTaskItem({
                 <SelectItem value={TaskStatus.DONE}>Done</SelectItem>
               </SelectContent>
             </Select>
-            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
@@ -204,7 +204,7 @@ function SortableTaskItem({
                 size="icon"
                 onClick={() => startDelete(task)}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
             </div>
           </div>
@@ -343,9 +343,9 @@ function KanbanTaskItem({
                   {task.title}
                 </span>
               </div>
-              <div className="flex items-center gap-1 pt-2 border-t">
+              <div className="flex items-center gap-1 pt-1">
                 <div className="flex-1"></div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -360,7 +360,7 @@ function KanbanTaskItem({
                     className="h-7 w-7"
                     onClick={() => startDelete(task)}
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-3 w-3 text-destructive" />
                   </Button>
                 </div>
               </div>
