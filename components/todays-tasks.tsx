@@ -74,7 +74,6 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 // View modes
 type ViewMode = "list" | "kanban";
@@ -1443,38 +1442,34 @@ export function TodaysTasks() {
     <>
       <div className="w-full mx-auto p-6 space-y-8">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Today&apos;s Tasks</h2>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center text-sm text-muted-foreground">
-              <CalendarClock className="h-4 w-4 mr-1" />
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </div>
-            <ThemeToggle />
-            <div className="flex border rounded-md overflow-hidden">
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="sm"
-                className="rounded-none"
-                onClick={() => setViewMode("list")}
-              >
-                <ListTodo className="h-4 w-4 mr-1" />
-                List
-              </Button>
-              <Button
-                variant={viewMode === "kanban" ? "default" : "ghost"}
-                size="sm"
-                className="rounded-none"
-                onClick={() => setViewMode("kanban")}
-              >
-                <Trello className="h-4 w-4 mr-1" />
-                Board
-              </Button>
-            </div>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <CalendarClock className="h-4 w-4 mr-1" />
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </div>
+          <div className="flex border rounded-md overflow-hidden">
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              className="rounded-none"
+              onClick={() => setViewMode("list")}
+            >
+              <ListTodo className="h-4 w-4 mr-1" />
+              List
+            </Button>
+            <Button
+              variant={viewMode === "kanban" ? "default" : "ghost"}
+              size="sm"
+              className="rounded-none"
+              onClick={() => setViewMode("kanban")}
+            >
+              <Trello className="h-4 w-4 mr-1" />
+              Board
+            </Button>
           </div>
         </div>
 
