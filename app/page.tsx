@@ -1,4 +1,4 @@
-import { TodoList } from "@/components/todo-list";
+import { DateTasks } from "@/components/date-tasks";
 import { TodaysTasks } from "@/components/todays-tasks";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -11,13 +11,13 @@ export default function Home() {
         <Tabs defaultValue="today" className="w-full">
           <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
             <TabsTrigger value="today">Today&apos;s Tasks</TabsTrigger>
-            <TabsTrigger value="all">All Todos</TabsTrigger>
+            <TabsTrigger value="date">Tasks by Date</TabsTrigger>
           </TabsList>
           <TabsContent value="today">
             <TodaysTasks />
           </TabsContent>
-          <TabsContent value="all">
-            <TodoList />
+          <TabsContent value="date">
+            <DateTasks />
           </TabsContent>
         </Tabs>
       </main>
