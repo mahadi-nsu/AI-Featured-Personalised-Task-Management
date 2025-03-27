@@ -1591,7 +1591,7 @@ export function TodaysTasks() {
         </Card>
 
         {/* Search and Filter Section */}
-        <Card className="p-4 shadow-sm">
+        <Card className="p-4 shadow-sm bg-blue-50/50 border-blue-100">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search */}
             <div className="relative">
@@ -1600,7 +1600,7 @@ export function TodaysTasks() {
                 placeholder="Search tasks..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-9 bg-white/80"
               />
             </div>
 
@@ -1611,7 +1611,7 @@ export function TodaysTasks() {
                 setStatusFilter(value as TaskStatus | "all")
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="bg-white/80">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -1631,7 +1631,7 @@ export function TodaysTasks() {
                 setPriorityFilter(value as TaskPriority | "all")
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="bg-white/80">
                 <SelectValue placeholder="Filter by priority" />
               </SelectTrigger>
               <SelectContent>
