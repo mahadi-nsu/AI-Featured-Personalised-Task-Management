@@ -11,6 +11,12 @@ export enum TaskStatus {
   DONE = "Done",
 }
 
+export enum TaskPriority {
+  HIGH = "High",
+  MEDIUM = "Medium",
+  LOW = "Low",
+}
+
 export type Task = {
   id: string;
   title: string;
@@ -18,4 +24,5 @@ export type Task = {
   date: string;
   createdAt: string;
   order?: number; // Optional order property for sorting
+  priority?: TaskPriority; // Optional priority property
 };

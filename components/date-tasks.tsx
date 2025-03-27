@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Plus, Trash2, Pencil, CalendarIcon, GripVertical } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Pencil,
+  CalendarIcon,
+  GripVertical,
+  Tag,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -37,7 +44,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Task, TaskStatus } from "@/lib/utils";
+import { Task, TaskStatus, TaskPriority } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import {
   loadTasks,
@@ -55,6 +62,8 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -102,6 +111,9 @@ function SortableTaskItem({
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
   const [editedTitle, setEditedTitle] = useState("");
+  const [editedPriority, setEditedPriority] = useState<
+    TaskPriority | undefined
+  >(undefined);
 
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {
@@ -134,15 +146,31 @@ function SortableTaskItem({
   const startEditing = (task: Task) => {
     setEditingTask(task);
     setEditedTitle(task.title);
+    setEditedPriority(task.priority);
   };
 
   const saveEdit = () => {
     if (editingTask && editedTitle.trim()) {
       const updatedTasks = updateTask(editingTask.id, {
         title: editedTitle.trim(),
+        priority: editedPriority,
       });
       setEditingTask(null);
       setTasks(updatedTasks);
+    }
+  };
+
+  // Get priority badge color
+  const getPriorityColor = (priority?: TaskPriority) => {
+    switch (priority) {
+      case TaskPriority.HIGH:
+        return "bg-red-100 text-red-800 border-red-200";
+      case TaskPriority.MEDIUM:
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case TaskPriority.LOW:
+        return "bg-green-100 text-green-800 border-green-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -158,15 +186,27 @@ function SortableTaskItem({
             >
               <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
-            <span
-              className={`${
-                task.status === TaskStatus.DONE
-                  ? "line-through text-muted-foreground"
-                  : ""
-              }`}
-            >
-              {task.title}
-            </span>
+            <div className="flex flex-col gap-1">
+              <span
+                className={`${
+                  task.status === TaskStatus.DONE
+                    ? "line-through text-muted-foreground"
+                    : ""
+                }`}
+              >
+                {task.title}
+              </span>
+              {task.priority && (
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
+                    task.priority
+                  )}`}
+                >
+                  <Tag className="h-3 w-3 mr-1" />
+                  {task.priority}
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Select
@@ -219,13 +259,78 @@ function SortableTaskItem({
           <DialogHeader>
             <DialogTitle>Edit Task</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-4">
             <Input
               value={editedTitle}
               onChange={(e) => setEditedTitle(e.target.value)}
               placeholder="Edit task title..."
               className="w-full"
             />
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center">
+                <Tag className="h-4 w-4 mr-1" />
+                Priority
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    editedPriority === TaskPriority.HIGH ? "default" : "outline"
+                  }
+                  className={
+                    editedPriority === TaskPriority.HIGH
+                      ? "bg-red-500 hover:bg-red-600"
+                      : ""
+                  }
+                  onClick={() => setEditedPriority(TaskPriority.HIGH)}
+                >
+                  High
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    editedPriority === TaskPriority.MEDIUM
+                      ? "default"
+                      : "outline"
+                  }
+                  className={
+                    editedPriority === TaskPriority.MEDIUM
+                      ? "bg-yellow-500 hover:bg-yellow-600"
+                      : ""
+                  }
+                  onClick={() => setEditedPriority(TaskPriority.MEDIUM)}
+                >
+                  Medium
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    editedPriority === TaskPriority.LOW ? "default" : "outline"
+                  }
+                  className={
+                    editedPriority === TaskPriority.LOW
+                      ? "bg-green-500 hover:bg-green-600"
+                      : ""
+                  }
+                  onClick={() => setEditedPriority(TaskPriority.LOW)}
+                >
+                  Low
+                </Button>
+                {editedPriority && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setEditedPriority(undefined)}
+                  >
+                    No Priority
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingTask(null)}>
@@ -264,9 +369,61 @@ function SortableTaskItem({
   );
 }
 
+// Add DraggedTaskItem component
+function DraggedTaskItem({ task }: { task: Task }) {
+  // Get priority badge color
+  const getPriorityColor = (priority?: TaskPriority) => {
+    switch (priority) {
+      case TaskPriority.HIGH:
+        return "bg-red-100 text-red-800 border-red-200";
+      case TaskPriority.MEDIUM:
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case TaskPriority.LOW:
+        return "bg-green-100 text-green-800 border-green-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  return (
+    <Card className="p-3 mb-2 w-[300px] shadow-md opacity-90 border-2 border-primary">
+      <div className="flex items-start gap-2">
+        <div className="flex-1">
+          <div className="w-full pb-2 px-1 text-sm font-medium">
+            <span
+              className={
+                task.status === TaskStatus.DONE
+                  ? "line-through text-muted-foreground"
+                  : ""
+              }
+            >
+              {task.title}
+            </span>
+            {task.priority && (
+              <div className="mt-1">
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
+                    task.priority
+                  )}`}
+                >
+                  <Tag className="h-3 w-3 mr-1" />
+                  {task.priority}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function DateTasks() {
   const [date, setDate] = useState<Date>(new Date());
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [priority, setPriority] = useState<TaskPriority | undefined>(undefined);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
   const { register, handleSubmit, reset } = useForm<{ title: string }>();
 
   // Setup sensors for drag and drop
@@ -335,6 +492,7 @@ export function DateTasks() {
       status: TaskStatus.UNTOUCHED,
       date: formattedDate,
       createdAt: new Date().toISOString(),
+      priority: priority,
     };
 
     console.log("Creating new task:", newTask);
@@ -343,12 +501,29 @@ export function DateTasks() {
     const updatedTasks = addTask(newTask);
     setTasks(updatedTasks);
 
+    // Reset form
     reset();
+    setPriority(undefined);
+  };
+
+  // Handle drag start
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const id = active.id as string;
+    setActiveId(id);
+
+    // Find the task to display in the drag overlay
+    const task = tasks.find((t) => t.id === id);
+    if (task) {
+      setActiveTask(task);
+    }
   };
 
   // Handle drag end event
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
+    setActiveTask(null);
 
     if (over && active.id !== over.id) {
       const activeId = String(active.id);
@@ -402,18 +577,83 @@ export function DateTasks() {
         </div>
 
         <Card className="p-6">
-          <form
-            onSubmit={handleSubmit(createTask)}
-            className="flex items-center gap-4"
-          >
-            <Input
-              placeholder={`Add a task for ${format(date, "MMMM d, yyyy")}...`}
-              {...register("title", { required: true })}
-              className="flex-1"
-            />
-            <Button type="submit" size="icon">
-              <Plus className="h-4 w-4" />
-            </Button>
+          <form onSubmit={handleSubmit(createTask)} className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Input
+                placeholder={`Add a task for ${format(
+                  date,
+                  "MMMM d, yyyy"
+                )}...`}
+                {...register("title", { required: true })}
+                className="flex-1"
+              />
+              <Button type="submit" size="icon">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground flex items-center">
+                <Tag className="h-4 w-4 mr-1" />
+                Priority:
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    priority === TaskPriority.HIGH ? "default" : "outline"
+                  }
+                  className={
+                    priority === TaskPriority.HIGH
+                      ? "bg-red-500 hover:bg-red-600"
+                      : ""
+                  }
+                  onClick={() => setPriority(TaskPriority.HIGH)}
+                >
+                  High
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    priority === TaskPriority.MEDIUM ? "default" : "outline"
+                  }
+                  className={
+                    priority === TaskPriority.MEDIUM
+                      ? "bg-yellow-500 hover:bg-yellow-600"
+                      : ""
+                  }
+                  onClick={() => setPriority(TaskPriority.MEDIUM)}
+                >
+                  Medium
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    priority === TaskPriority.LOW ? "default" : "outline"
+                  }
+                  className={
+                    priority === TaskPriority.LOW
+                      ? "bg-green-500 hover:bg-green-600"
+                      : ""
+                  }
+                  onClick={() => setPriority(TaskPriority.LOW)}
+                >
+                  Low
+                </Button>
+                {priority && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setPriority(undefined)}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </div>
           </form>
         </Card>
 
@@ -427,6 +667,7 @@ export function DateTasks() {
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
             >
               <SortableContext
@@ -444,6 +685,11 @@ export function DateTasks() {
                   ))}
                 </div>
               </SortableContext>
+
+              {/* Drag Overlay */}
+              <DragOverlay>
+                {activeTask && <DraggedTaskItem task={activeTask} />}
+              </DragOverlay>
             </DndContext>
           )}
         </div>

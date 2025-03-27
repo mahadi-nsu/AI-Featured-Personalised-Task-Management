@@ -10,6 +10,7 @@ import {
   GripVertical,
   ListTodo,
   Trello,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Task, TaskStatus } from "@/lib/utils";
+import { Task, TaskStatus, TaskPriority } from "@/lib/utils";
 import {
   loadTasks,
   addTask,
@@ -103,6 +104,9 @@ function SortableTaskItem({
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
   const [editedTitle, setEditedTitle] = useState("");
+  const [editedPriority, setEditedPriority] = useState<
+    TaskPriority | undefined
+  >(undefined);
 
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {
@@ -112,6 +116,19 @@ function SortableTaskItem({
         return "text-blue-500";
       default:
         return "text-gray-500";
+    }
+  };
+
+  const getPriorityColor = (priority?: TaskPriority) => {
+    switch (priority) {
+      case TaskPriority.HIGH:
+        return "bg-red-100 text-red-800 border-red-200";
+      case TaskPriority.MEDIUM:
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case TaskPriority.LOW:
+        return "bg-green-100 text-green-800 border-green-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -135,12 +152,14 @@ function SortableTaskItem({
   const startEditing = (task: Task) => {
     setEditingTask(task);
     setEditedTitle(task.title);
+    setEditedPriority(task.priority);
   };
 
   const saveEdit = () => {
     if (editingTask && editedTitle.trim()) {
       const updatedTasks = updateTask(editingTask.id, {
         title: editedTitle.trim(),
+        priority: editedPriority,
       });
       setEditingTask(null);
       setTasks(updatedTasks);
@@ -159,15 +178,27 @@ function SortableTaskItem({
             >
               <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
-            <span
-              className={`${
-                task.status === TaskStatus.DONE
-                  ? "line-through text-muted-foreground"
-                  : ""
-              }`}
-            >
-              {task.title}
-            </span>
+            <div className="flex flex-col gap-1">
+              <span
+                className={`${
+                  task.status === TaskStatus.DONE
+                    ? "line-through text-muted-foreground"
+                    : ""
+                }`}
+              >
+                {task.title}
+              </span>
+              {task.priority && (
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
+                    task.priority
+                  )}`}
+                >
+                  <Tag className="h-3 w-3 mr-1" />
+                  {task.priority}
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Select
@@ -220,13 +251,78 @@ function SortableTaskItem({
           <DialogHeader>
             <DialogTitle>Edit Task</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-4">
             <Input
               value={editedTitle}
               onChange={(e) => setEditedTitle(e.target.value)}
               placeholder="Edit task title..."
               className="w-full"
             />
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center">
+                <Tag className="h-4 w-4 mr-1" />
+                Priority
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    editedPriority === TaskPriority.HIGH ? "default" : "outline"
+                  }
+                  className={
+                    editedPriority === TaskPriority.HIGH
+                      ? "bg-red-500 hover:bg-red-600"
+                      : ""
+                  }
+                  onClick={() => setEditedPriority(TaskPriority.HIGH)}
+                >
+                  High
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    editedPriority === TaskPriority.MEDIUM
+                      ? "default"
+                      : "outline"
+                  }
+                  className={
+                    editedPriority === TaskPriority.MEDIUM
+                      ? "bg-yellow-500 hover:bg-yellow-600"
+                      : ""
+                  }
+                  onClick={() => setEditedPriority(TaskPriority.MEDIUM)}
+                >
+                  Medium
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    editedPriority === TaskPriority.LOW ? "default" : "outline"
+                  }
+                  className={
+                    editedPriority === TaskPriority.LOW
+                      ? "bg-green-500 hover:bg-green-600"
+                      : ""
+                  }
+                  onClick={() => setEditedPriority(TaskPriority.LOW)}
+                >
+                  Low
+                </Button>
+                {editedPriority && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setEditedPriority(undefined)}
+                  >
+                    No Priority
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingTask(null)}>
@@ -294,6 +390,22 @@ function KanbanTaskItem({
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
   const [editedTitle, setEditedTitle] = useState("");
+  const [editedPriority, setEditedPriority] = useState<
+    TaskPriority | undefined
+  >(undefined);
+
+  const getPriorityColor = (priority?: TaskPriority) => {
+    switch (priority) {
+      case TaskPriority.HIGH:
+        return "bg-red-100 text-red-800 border-red-200";
+      case TaskPriority.MEDIUM:
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case TaskPriority.LOW:
+        return "bg-green-100 text-green-800 border-green-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
 
   const startDelete = (task: Task) => {
     setDeletingTask(task);
@@ -310,12 +422,14 @@ function KanbanTaskItem({
   const startEditing = (task: Task) => {
     setEditingTask(task);
     setEditedTitle(task.title);
+    setEditedPriority(task.priority);
   };
 
   const saveEdit = () => {
     if (editingTask && editedTitle.trim()) {
       const updatedTasks = updateTask(editingTask.id, {
         title: editedTitle.trim(),
+        priority: editedPriority,
       });
       setEditingTask(null);
       setTasks(updatedTasks);
@@ -342,6 +456,18 @@ function KanbanTaskItem({
                 >
                   {task.title}
                 </span>
+                {task.priority && (
+                  <div className="mt-1">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
+                        task.priority
+                      )}`}
+                    >
+                      <Tag className="h-3 w-3 mr-1" />
+                      {task.priority}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-1 pt-1">
                 <div className="flex-1"></div>
@@ -378,13 +504,78 @@ function KanbanTaskItem({
           <DialogHeader>
             <DialogTitle>Edit Task</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-4">
             <Input
               value={editedTitle}
               onChange={(e) => setEditedTitle(e.target.value)}
               placeholder="Edit task title..."
               className="w-full"
             />
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center">
+                <Tag className="h-4 w-4 mr-1" />
+                Priority
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    editedPriority === TaskPriority.HIGH ? "default" : "outline"
+                  }
+                  className={
+                    editedPriority === TaskPriority.HIGH
+                      ? "bg-red-500 hover:bg-red-600"
+                      : ""
+                  }
+                  onClick={() => setEditedPriority(TaskPriority.HIGH)}
+                >
+                  High
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    editedPriority === TaskPriority.MEDIUM
+                      ? "default"
+                      : "outline"
+                  }
+                  className={
+                    editedPriority === TaskPriority.MEDIUM
+                      ? "bg-yellow-500 hover:bg-yellow-600"
+                      : ""
+                  }
+                  onClick={() => setEditedPriority(TaskPriority.MEDIUM)}
+                >
+                  Medium
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    editedPriority === TaskPriority.LOW ? "default" : "outline"
+                  }
+                  className={
+                    editedPriority === TaskPriority.LOW
+                      ? "bg-green-500 hover:bg-green-600"
+                      : ""
+                  }
+                  onClick={() => setEditedPriority(TaskPriority.LOW)}
+                >
+                  Low
+                </Button>
+                {editedPriority && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setEditedPriority(undefined)}
+                  >
+                    No Priority
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingTask(null)}>
@@ -465,6 +656,20 @@ function KanbanColumn({
 
 // Add active task component for the drag overlay
 function DraggedTaskItem({ task }: { task: Task }) {
+  // Get priority badge color
+  const getPriorityColor = (priority?: TaskPriority) => {
+    switch (priority) {
+      case TaskPriority.HIGH:
+        return "bg-red-100 text-red-800 border-red-200";
+      case TaskPriority.MEDIUM:
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case TaskPriority.LOW:
+        return "bg-green-100 text-green-800 border-green-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
   return (
     <Card className="p-3 mb-2 w-[300px] shadow-md opacity-90 border-2 border-primary">
       <div className="flex items-start gap-2">
@@ -479,6 +684,18 @@ function DraggedTaskItem({ task }: { task: Task }) {
             >
               {task.title}
             </span>
+            {task.priority && (
+              <div className="mt-1">
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
+                    task.priority
+                  )}`}
+                >
+                  <Tag className="h-3 w-3 mr-1" />
+                  {task.priority}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -491,6 +708,7 @@ export function TodaysTasks() {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [priority, setPriority] = useState<TaskPriority | undefined>(undefined);
   const { register, handleSubmit, reset } = useForm<{ title: string }>();
 
   // Setup sensors for drag and drop
@@ -573,6 +791,7 @@ export function TodaysTasks() {
       status: TaskStatus.UNTOUCHED,
       date: formattedDate,
       createdAt: new Date().toISOString(),
+      priority: priority,
     };
 
     console.log("Creating new task for today:", newTask);
@@ -581,7 +800,9 @@ export function TodaysTasks() {
     const updatedTasks = addTask(newTask);
     setTasks(updatedTasks);
 
+    // Reset form
     reset();
+    setPriority(undefined);
   };
 
   // Handle drag start
@@ -814,18 +1035,80 @@ export function TodaysTasks() {
         </div>
 
         <Card className="p-6 shadow-sm">
-          <form
-            onSubmit={handleSubmit(createTask)}
-            className="flex items-center gap-4"
-          >
-            <Input
-              placeholder="Add a new task for today..."
-              {...register("title", { required: true })}
-              className="flex-1"
-            />
-            <Button type="submit" size="icon">
-              <Plus className="h-4 w-4" />
-            </Button>
+          <form onSubmit={handleSubmit(createTask)} className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Input
+                placeholder="Add a new task for today..."
+                {...register("title", { required: true })}
+                className="flex-1"
+              />
+              <Button type="submit" size="icon">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground flex items-center">
+                <Tag className="h-4 w-4 mr-1" />
+                Priority:
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    priority === TaskPriority.HIGH ? "default" : "outline"
+                  }
+                  className={
+                    priority === TaskPriority.HIGH
+                      ? "bg-red-500 hover:bg-red-600"
+                      : ""
+                  }
+                  onClick={() => setPriority(TaskPriority.HIGH)}
+                >
+                  High
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    priority === TaskPriority.MEDIUM ? "default" : "outline"
+                  }
+                  className={
+                    priority === TaskPriority.MEDIUM
+                      ? "bg-yellow-500 hover:bg-yellow-600"
+                      : ""
+                  }
+                  onClick={() => setPriority(TaskPriority.MEDIUM)}
+                >
+                  Medium
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    priority === TaskPriority.LOW ? "default" : "outline"
+                  }
+                  className={
+                    priority === TaskPriority.LOW
+                      ? "bg-green-500 hover:bg-green-600"
+                      : ""
+                  }
+                  onClick={() => setPriority(TaskPriority.LOW)}
+                >
+                  Low
+                </Button>
+                {priority && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setPriority(undefined)}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </div>
           </form>
         </Card>
 
