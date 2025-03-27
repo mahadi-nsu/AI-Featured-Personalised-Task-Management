@@ -75,7 +75,15 @@ import { cn } from "@/lib/utils";
 type ViewMode = "list" | "kanban";
 
 // Sortable task item component
-function SortableTaskItem({ task }: { task: Task }) {
+function SortableTaskItem({
+  task,
+  tasks,
+  setTasks,
+}: {
+  task: Task;
+  tasks: Task[];
+  setTasks: (tasks: Task[]) => void;
+}) {
   const {
     attributes,
     listeners,
@@ -108,9 +116,8 @@ function SortableTaskItem({ task }: { task: Task }) {
   };
 
   const updateTaskStatus = (task: Task, status: TaskStatus) => {
-    updateTask(task.id, { status });
-    // We'll handle state update in parent component
-    window.location.reload(); // Temporary solution for state refresh
+    const updatedTasks = updateTask(task.id, { status });
+    setTasks(updatedTasks);
   };
 
   const startDelete = (task: Task) => {
@@ -119,10 +126,9 @@ function SortableTaskItem({ task }: { task: Task }) {
 
   const confirmDelete = () => {
     if (deletingTask) {
-      deleteTask(deletingTask.id);
+      const updatedTasks = deleteTask(deletingTask.id);
       setDeletingTask(null);
-      // We'll handle state update in parent component
-      window.location.reload(); // Temporary solution for state refresh
+      setTasks(updatedTasks);
     }
   };
 
@@ -133,12 +139,11 @@ function SortableTaskItem({ task }: { task: Task }) {
 
   const saveEdit = () => {
     if (editingTask && editedTitle.trim()) {
-      updateTask(editingTask.id, {
+      const updatedTasks = updateTask(editingTask.id, {
         title: editedTitle.trim(),
       });
       setEditingTask(null);
-      // We'll handle state update in parent component
-      window.location.reload(); // Temporary solution for state refresh
+      setTasks(updatedTasks);
     }
   };
 
@@ -843,7 +848,12 @@ export function TodaysTasks() {
               >
                 <div className="space-y-2">
                   {todaysTasks.map((task) => (
-                    <SortableTaskItem key={task.id} task={task} />
+                    <SortableTaskItem
+                      key={task.id}
+                      task={task}
+                      tasks={tasks}
+                      setTasks={setTasks}
+                    />
                   ))}
                 </div>
               </SortableContext>

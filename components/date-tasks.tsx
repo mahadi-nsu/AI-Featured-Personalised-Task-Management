@@ -74,13 +74,29 @@ interface OldTodo {
 }
 
 // Sortable task item component
-function SortableTaskItem({ task }: { task: Task }) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: task.id });
+function SortableTaskItem({
+  task,
+  tasks,
+  setTasks,
+}: {
+  task: Task;
+  tasks: Task[];
+  setTasks: (tasks: Task[]) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.3 : 1,
+    zIndex: isDragging ? 1 : 0,
   };
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -100,7 +116,7 @@ function SortableTaskItem({ task }: { task: Task }) {
 
   const updateTaskStatus = (task: Task, status: TaskStatus) => {
     const updatedTasks = updateTask(task.id, { status });
-    // We'll handle state update in parent component
+    setTasks(updatedTasks);
   };
 
   const startDelete = (task: Task) => {
@@ -111,8 +127,7 @@ function SortableTaskItem({ task }: { task: Task }) {
     if (deletingTask) {
       const updatedTasks = deleteTask(deletingTask.id);
       setDeletingTask(null);
-      // We'll handle state update in parent component
-      window.location.reload(); // Temporary solution for state refresh
+      setTasks(updatedTasks);
     }
   };
 
@@ -127,8 +142,7 @@ function SortableTaskItem({ task }: { task: Task }) {
         title: editedTitle.trim(),
       });
       setEditingTask(null);
-      // We'll handle state update in parent component
-      window.location.reload(); // Temporary solution for state refresh
+      setTasks(updatedTasks);
     }
   };
 
@@ -251,8 +265,8 @@ function SortableTaskItem({ task }: { task: Task }) {
 }
 
 export function DateTasks() {
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [date, setDate] = useState<Date>(new Date());
+  const [tasks, setTasks] = useState<Task[]>([]);
   const { register, handleSubmit, reset } = useForm<{ title: string }>();
 
   // Setup sensors for drag and drop
@@ -269,9 +283,9 @@ export function DateTasks() {
 
   // Load tasks on component mount
   useEffect(() => {
-    const tasks = loadTasks();
-    console.log("DateTasks - Loaded tasks:", tasks);
-    setTasks(tasks);
+    const loadedTasks = loadTasks();
+    console.log("DateTasks - Loaded tasks:", loadedTasks);
+    setTasks(loadedTasks);
   }, []);
 
   // Get tasks for selected date
@@ -421,7 +435,12 @@ export function DateTasks() {
               >
                 <div className="space-y-2">
                   {dateTasksOnly.map((task) => (
-                    <SortableTaskItem key={task.id} task={task} />
+                    <SortableTaskItem
+                      key={task.id}
+                      task={task}
+                      tasks={tasks}
+                      setTasks={setTasks}
+                    />
                   ))}
                 </div>
               </SortableContext>
