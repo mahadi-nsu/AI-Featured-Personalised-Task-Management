@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import {
   Plus,
@@ -83,6 +83,23 @@ interface OldTodo {
   createdAt: string;
 }
 
+// Add this helper function at the top level
+function calculateRemainingTime(task: Task): number | null {
+  if (!task.estimatedHours && !task.estimatedMinutes) return null;
+  if (task.status !== TaskStatus.IN_PROGRESS) return null;
+
+  const totalMinutes =
+    (task.estimatedHours || 0) * 60 + (task.estimatedMinutes || 0);
+  const startTime = task.startedAt ? new Date(task.startedAt).getTime() : null;
+
+  if (!startTime) return null;
+
+  const elapsedMinutes = (Date.now() - startTime) / (1000 * 60);
+  const remainingMinutes = totalMinutes - elapsedMinutes;
+
+  return Math.max(0, remainingMinutes);
+}
+
 // Sortable task item component
 function SortableTaskItem({
   task,
@@ -117,6 +134,8 @@ function SortableTaskItem({
   >(undefined);
   const [editedHours, setEditedHours] = useState(0);
   const [editedMinutes, setEditedMinutes] = useState(0);
+  const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {
@@ -182,18 +201,70 @@ function SortableTaskItem({
   };
 
   // Format estimated time display
-  const getEstimatedTimeDisplay = (hours?: number, minutes?: number) => {
-    if (!hours && !minutes) return null;
+  const getEstimatedTimeDisplay = (task: Task) => {
+    if (!task.estimatedHours && !task.estimatedMinutes) return null;
     const parts = [];
-    if (hours) parts.push(`${hours}h`);
-    if (minutes) parts.push(`${minutes}m`);
+    if (task.estimatedHours) parts.push(`${task.estimatedHours}h`);
+    if (task.estimatedMinutes) parts.push(`${task.estimatedMinutes}m`);
     return parts.join(" ");
+  };
+
+  // Add countdown effect
+  useEffect(() => {
+    if (task.status === TaskStatus.IN_PROGRESS) {
+      // Set start time if not already set
+      if (!task.startedAt) {
+        const updatedTasks = updateTask(task.id, {
+          startedAt: new Date().toISOString(),
+        });
+        setTasks(updatedTasks);
+      }
+
+      // Start countdown
+      const interval = setInterval(() => {
+        const remaining = calculateRemainingTime(task);
+        setRemainingTime(remaining);
+
+        // Play sound when 5 minutes or less remain
+        if (remaining !== null && remaining <= 5 && remaining > 0) {
+          audioRef.current?.play();
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    } else {
+      setRemainingTime(null);
+    }
+  }, [
+    task.status,
+    task.id,
+    task.startedAt,
+    task.estimatedHours,
+    task.estimatedMinutes,
+  ]);
+
+  const formatTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.floor(minutes % 60);
+    return `${hours}h ${mins}m`;
   };
 
   return (
     <>
+      <audio ref={audioRef} src="/notification.mp3" />
       <div ref={setNodeRef} style={style} className="touch-none">
-        <Card className="p-4 flex items-center justify-between group">
+        <Card
+          className={cn(
+            "p-4 flex items-center justify-between group",
+            remainingTime !== null &&
+              remainingTime <= 5 &&
+              remainingTime > 0 &&
+              "bg-green-50 border-green-200",
+            remainingTime !== null &&
+              remainingTime <= 0 &&
+              "bg-red-50 border-red-200"
+          )}
+        >
           <div className="flex items-center gap-4 flex-1">
             <div
               {...attributes}
@@ -212,7 +283,7 @@ function SortableTaskItem({
               >
                 {task.title}
               </span>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {task.priority && (
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
@@ -223,13 +294,27 @@ function SortableTaskItem({
                     {task.priority}
                   </span>
                 )}
-                {(task.estimatedHours || task.estimatedMinutes) && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit bg-blue-100 text-blue-800 border-blue-200">
+                {getEstimatedTimeDisplay(task) && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
                     <Clock className="h-3 w-3 mr-1" />
-                    {getEstimatedTimeDisplay(
-                      task.estimatedHours,
-                      task.estimatedMinutes
+                    {getEstimatedTimeDisplay(task)}
+                  </span>
+                )}
+                {remainingTime !== null && (
+                  <span
+                    className={cn(
+                      "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                      remainingTime <= 0
+                        ? "bg-red-100 text-red-800 border-red-200"
+                        : remainingTime <= 5
+                        ? "bg-red-100 text-red-800 border-red-200"
+                        : "bg-yellow-100 text-yellow-800 border-yellow-200"
                     )}
+                  >
+                    <Clock className="h-3 w-3 mr-1" />
+                    {remainingTime <= 0
+                      ? "Time's Up!"
+                      : `${formatTime(remainingTime)} remaining`}
                   </span>
                 )}
               </div>
@@ -448,19 +533,19 @@ function DraggedTaskItem({ task }: { task: Task }) {
   };
 
   // Format estimated time display
-  const getEstimatedTimeDisplay = (hours?: number, minutes?: number) => {
-    if (!hours && !minutes) return null;
+  const getEstimatedTimeDisplay = (task: Task) => {
+    if (!task.estimatedHours && !task.estimatedMinutes) return null;
     const parts = [];
-    if (hours) parts.push(`${hours}h`);
-    if (minutes) parts.push(`${minutes}m`);
+    if (task.estimatedHours) parts.push(`${task.estimatedHours}h`);
+    if (task.estimatedMinutes) parts.push(`${task.estimatedMinutes}m`);
     return parts.join(" ");
   };
 
   return (
-    <Card className="p-3 mb-2 w-[300px] shadow-md opacity-90 border-2 border-primary">
-      <div className="flex items-start gap-2">
+    <Card className="p-4 w-full shadow-md opacity-90 border-2 border-primary">
+      <div className="flex items-center gap-4 flex-1">
         <div className="flex-1">
-          <div className="w-full pb-2 px-1 text-sm font-medium">
+          <div className="flex flex-col gap-1">
             <span
               className={
                 task.status === TaskStatus.DONE
@@ -470,7 +555,7 @@ function DraggedTaskItem({ task }: { task: Task }) {
             >
               {task.title}
             </span>
-            <div className="flex gap-2 mt-1">
+            <div className="flex flex-wrap gap-2">
               {task.priority && (
                 <span
                   className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
@@ -481,13 +566,10 @@ function DraggedTaskItem({ task }: { task: Task }) {
                   {task.priority}
                 </span>
               )}
-              {(task.estimatedHours || task.estimatedMinutes) && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit bg-blue-100 text-blue-800 border-blue-200">
+              {getEstimatedTimeDisplay(task) && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
                   <Clock className="h-3 w-3 mr-1" />
-                  {getEstimatedTimeDisplay(
-                    task.estimatedHours,
-                    task.estimatedMinutes
-                  )}
+                  {getEstimatedTimeDisplay(task)}
                 </span>
               )}
             </div>

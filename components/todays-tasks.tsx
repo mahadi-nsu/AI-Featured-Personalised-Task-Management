@@ -940,11 +940,19 @@ function DraggedTaskItem({ task }: { task: Task }) {
     }
   };
 
+  const getEstimatedTimeDisplay = (task: Task) => {
+    if (!task.estimatedHours && !task.estimatedMinutes) return null;
+    const parts = [];
+    if (task.estimatedHours) parts.push(`${task.estimatedHours}h`);
+    if (task.estimatedMinutes) parts.push(`${task.estimatedMinutes}m`);
+    return parts.join(" ");
+  };
+
   return (
-    <Card className="p-3 mb-2 w-[300px] shadow-md opacity-90 border-2 border-primary">
-      <div className="flex items-start gap-2">
+    <Card className="p-4 w-full shadow-md opacity-90 border-2 border-primary">
+      <div className="flex items-center gap-4 flex-1">
         <div className="flex-1">
-          <div className="w-full pb-2 px-1 text-sm font-medium">
+          <div className="flex flex-col gap-1">
             <span
               className={
                 task.status === TaskStatus.DONE
@@ -954,8 +962,8 @@ function DraggedTaskItem({ task }: { task: Task }) {
             >
               {task.title}
             </span>
-            {task.priority && (
-              <div className="mt-1">
+            <div className="flex flex-wrap gap-2">
+              {task.priority && (
                 <span
                   className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
                     task.priority
@@ -964,8 +972,14 @@ function DraggedTaskItem({ task }: { task: Task }) {
                   <Tag className="h-3 w-3 mr-1" />
                   {task.priority}
                 </span>
-              </div>
-            )}
+              )}
+              {getEstimatedTimeDisplay(task) && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {getEstimatedTimeDisplay(task)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
