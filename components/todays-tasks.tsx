@@ -431,7 +431,7 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`bg-background border rounded-md shadow-sm overflow-hidden ${
+      className={`bg-background border rounded-md shadow-sm overflow-hidden h-full ${
         isOver ? "ring-2 ring-primary ring-opacity-50" : ""
       }`}
     >
@@ -670,7 +670,7 @@ export function TodaysTasks() {
 
   return (
     <>
-      <div className="max-w-2xl mx-auto p-6 space-y-8">
+      <div className="w-full mx-auto p-6 space-y-8">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold">Today&apos;s Tasks</h2>
           <div className="flex items-center gap-4">
@@ -706,7 +706,7 @@ export function TodaysTasks() {
           </div>
         </div>
 
-        <Card className="p-6">
+        <Card className="p-6 shadow-sm">
           <form
             onSubmit={handleSubmit(createTask)}
             className="flex items-center gap-4"
@@ -755,7 +755,7 @@ export function TodaysTasks() {
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
             >
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Untouched Column */}
                 <KanbanColumn
                   id="untouched-column"
