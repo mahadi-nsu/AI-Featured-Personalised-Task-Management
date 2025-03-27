@@ -76,12 +76,20 @@ type ViewMode = "list" | "kanban";
 
 // Sortable task item component
 function SortableTaskItem({ task }: { task: Task }) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: task.id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.3 : 1,
+    zIndex: isDragging ? 1 : 0,
   };
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -274,7 +282,8 @@ function KanbanTaskItem({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.3 : 1,
+    zIndex: isDragging ? 1 : 0,
   };
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -432,7 +441,7 @@ function KanbanColumn({
     <div
       ref={setNodeRef}
       className={`bg-background border rounded-md shadow-sm overflow-hidden h-full ${
-        isOver ? "ring-2 ring-primary ring-opacity-50" : ""
+        isOver ? "ring-2 ring-primary ring-opacity-70 bg-primary/5" : ""
       }`}
     >
       <div className="p-3 bg-muted font-medium border-b">
@@ -449,10 +458,34 @@ function KanbanColumn({
   );
 }
 
+// Add active task component for the drag overlay
+function DraggedTaskItem({ task }: { task: Task }) {
+  return (
+    <Card className="p-3 mb-2 w-[300px] shadow-md opacity-90 border-2 border-primary">
+      <div className="flex items-start gap-2">
+        <div className="flex-1">
+          <div className="w-full pb-2 px-1 text-sm font-medium">
+            <span
+              className={
+                task.status === TaskStatus.DONE
+                  ? "line-through text-muted-foreground"
+                  : ""
+              }
+            >
+              {task.title}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function TodaysTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
   const { register, handleSubmit, reset } = useForm<{ title: string }>();
 
   // Setup sensors for drag and drop
@@ -549,7 +582,14 @@ export function TodaysTasks() {
   // Handle drag start
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    setActiveId(active.id as string);
+    const id = active.id as string;
+    setActiveId(id);
+
+    // Find the task to display in the drag overlay
+    const task = tasks.find((t) => t.id === id);
+    if (task) {
+      setActiveTask(task);
+    }
   };
 
   // Handle drag over event - to add visual feedback
@@ -603,6 +643,7 @@ export function TodaysTasks() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
+    setActiveTask(null);
 
     if (!over) return;
 
@@ -745,6 +786,11 @@ export function TodaysTasks() {
                   ))}
                 </div>
               </SortableContext>
+
+              {/* Drag Overlay for List View */}
+              <DragOverlay>
+                {activeTask && <DraggedTaskItem task={activeTask} />}
+              </DragOverlay>
             </DndContext>
           ) : (
             // Kanban Board View
@@ -822,6 +868,11 @@ export function TodaysTasks() {
                   </SortableContext>
                 </KanbanColumn>
               </div>
+
+              {/* Drag Overlay */}
+              <DragOverlay>
+                {activeTask && <DraggedTaskItem task={activeTask} />}
+              </DragOverlay>
             </DndContext>
           )}
         </div>
