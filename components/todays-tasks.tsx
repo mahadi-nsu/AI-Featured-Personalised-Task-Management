@@ -13,6 +13,7 @@ import {
   Tag,
   Clock,
   Bell,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1127,6 +1128,11 @@ export function TodaysTasks() {
   const [estimatedHours, setEstimatedHours] = useState<number>(0);
   const [estimatedMinutes, setEstimatedMinutes] = useState<number>(0);
   const { register, handleSubmit, reset } = useForm<{ title: string }>();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
+  const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "all">(
+    "all"
+  );
 
   // Setup sensors for drag and drop
   const sensors = useSensors(
@@ -1184,14 +1190,32 @@ export function TodaysTasks() {
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
 
+  // Add this function to filter tasks
+  const filteredTasks = todaysTasks.filter((task) => {
+    // Search filter
+    const matchesSearch = task.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+
+    // Status filter
+    const matchesStatus =
+      statusFilter === "all" || task.status === statusFilter;
+
+    // Priority filter
+    const matchesPriority =
+      priorityFilter === "all" || task.priority === priorityFilter;
+
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
+
   // Group tasks by status for Kanban view
-  const untouchedTasks = todaysTasks.filter(
+  const untouchedTasks = filteredTasks.filter(
     (task) => task.status === TaskStatus.UNTOUCHED
   );
-  const inProgressTasks = todaysTasks.filter(
+  const inProgressTasks = filteredTasks.filter(
     (task) => task.status === TaskStatus.IN_PROGRESS
   );
-  const doneTasks = todaysTasks.filter(
+  const doneTasks = filteredTasks.filter(
     (task) => task.status === TaskStatus.DONE
   );
 
@@ -1566,10 +1590,66 @@ export function TodaysTasks() {
           </form>
         </Card>
 
+        {/* Search and Filter Section */}
+        <Card className="p-4 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <Select
+              value={statusFilter}
+              onValueChange={(value) =>
+                setStatusFilter(value as TaskStatus | "all")
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value={TaskStatus.UNTOUCHED}>Untouched</SelectItem>
+                <SelectItem value={TaskStatus.IN_PROGRESS}>
+                  In Progress
+                </SelectItem>
+                <SelectItem value={TaskStatus.DONE}>Done</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Priority Filter */}
+            <Select
+              value={priorityFilter}
+              onValueChange={(value) =>
+                setPriorityFilter(value as TaskPriority | "all")
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value={TaskPriority.HIGH}>High</SelectItem>
+                <SelectItem value={TaskPriority.MEDIUM}>Medium</SelectItem>
+                <SelectItem value={TaskPriority.LOW}>Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </Card>
+
         <div className="space-y-4">
-          {todaysTasks.length === 0 ? (
+          {filteredTasks.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No tasks for today. Add one to get started!
+              {todaysTasks.length === 0
+                ? "No tasks for today. Add one to get started!"
+                : "No tasks match your filters. Try adjusting your search or filters."}
             </div>
           ) : viewMode === "list" ? (
             // List View
