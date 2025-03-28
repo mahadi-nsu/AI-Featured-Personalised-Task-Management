@@ -75,6 +75,15 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
+// Date Tasks Component
+// This component manages tasks for specific dates with drag and drop functionality.
+// Key features include:
+// - Calendar-based task organization
+// - Task creation with priority and estimated time
+// - Real-time countdown timer for in-progress tasks
+// - Sound notifications and visual feedback
+// - Drag and drop task reordering
+
 // Interface for old todos format
 interface OldTodo {
   id: string;
@@ -83,7 +92,11 @@ interface OldTodo {
   createdAt: string;
 }
 
-// Add this helper function at the top level
+// Helper function to calculate remaining time for tasks
+// Returns null if:
+// - Task has no estimated time
+// - Task is not in progress
+// - Task has no start time
 function calculateRemainingTime(task: Task): number | null {
   if (!task.estimatedHours && !task.estimatedMinutes) return null;
   if (task.status !== TaskStatus.IN_PROGRESS) return null;
@@ -101,6 +114,11 @@ function calculateRemainingTime(task: Task): number | null {
 }
 
 // Sortable task item component
+// Handles:
+// - Drag and drop functionality
+// - Task status management
+// - Time tracking and notifications
+// - Visual feedback for time states
 function SortableTaskItem({
   task,
   tasks,
@@ -259,13 +277,15 @@ function SortableTaskItem({
             task.status === TaskStatus.IN_PROGRESS &&
               !remainingTime &&
               "border-primary",
+            // Warning state: 5 minutes or less remaining
             remainingTime !== null &&
               remainingTime <= 5 &&
               remainingTime > 0 &&
               "border-yellow-400 bg-yellow-50 dark:bg-yellow-500/20",
+            // Time-up state: 0 minutes remaining
             remainingTime !== null &&
               remainingTime <= 0 &&
-              "border-red-800 bg-red-50 dark:bg-red-950/50"
+              "border-red-400 bg-red-50 dark:bg-red-500/20"
           )}
         >
           <div className="flex justify-between items-start">
@@ -523,7 +543,8 @@ function SortableTaskItem({
   );
 }
 
-// Add DraggedTaskItem component
+// Dragged task preview component
+// Shows a simplified version of the task while being dragged
 function DraggedTaskItem({ task }: { task: Task }) {
   // Get priority badge color
   const getPriorityColor = (priority?: TaskPriority) => {

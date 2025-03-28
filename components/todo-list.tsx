@@ -32,7 +32,30 @@ type Todo = {
   createdAt: string;
 };
 
-export function TodoList() {
+// Helper function to format time display
+// Converts hours and minutes into a readable string
+function formatTime(hours?: number, minutes?: number): string {
+  if (!hours && !minutes) return "";
+  const formattedHours = hours ? `${hours}h` : "";
+  const formattedMinutes = minutes ? `${minutes}m` : "";
+  return `${formattedHours} ${formattedMinutes}`.trim();
+}
+
+// Todo List component
+// Manages the display and interaction of task items
+// Props include:
+// - tasks: Array of Task objects to display
+// - setTasks: Function to update tasks
+// - showCompleted: Boolean to toggle completed tasks visibility
+export function TodoList({
+  tasks,
+  setTasks,
+  showCompleted = false,
+}: {
+  tasks: Todo[];
+  setTasks: (tasks: Todo[]) => void;
+  showCompleted?: boolean;
+}) {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [deletingTodo, setDeletingTodo] = useState<Todo | null>(null);
@@ -101,6 +124,11 @@ export function TodoList() {
     }
   };
 
+  // Filter tasks based on completion status
+  const filteredTodos = showCompleted
+    ? todos
+    : todos.filter((todo) => !todo.isComplete);
+
   return (
     <>
       <div className="max-w-2xl mx-auto p-6 space-y-8">
@@ -121,7 +149,7 @@ export function TodoList() {
         </Card>
 
         <div className="space-y-4">
-          {todos.map((todo) => (
+          {filteredTodos.map((todo) => (
             <Card
               key={todo.id}
               className="p-4 flex items-center justify-between group"

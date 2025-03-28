@@ -78,7 +78,20 @@ import { cn } from "@/lib/utils";
 // View modes
 type ViewMode = "list" | "kanban";
 
-// Add this helper function at the top level
+// Today's Tasks Component
+// This component handles tasks for the current day with both list and kanban board views.
+// Key features include:
+// - Task creation with priority and estimated time
+// - Real-time countdown timer for in-progress tasks
+// - Sound notifications for tasks nearing completion
+// - Drag and drop functionality for task reordering
+// - Search and filter capabilities
+
+// Helper function to calculate remaining time for tasks
+// Returns null if:
+// - Task has no estimated time
+// - Task is not in progress
+// - Task has no start time
 function calculateRemainingTime(task: Task): number | null {
   if (!task.estimatedHours && !task.estimatedMinutes) return null;
   if (task.status !== TaskStatus.IN_PROGRESS) return null;
@@ -95,7 +108,12 @@ function calculateRemainingTime(task: Task): number | null {
   return Math.max(0, remainingMinutes);
 }
 
-// Sortable task item component
+// Sortable task item component for list view
+// Handles:
+// - Drag and drop functionality
+// - Task status updates
+// - Time tracking and notifications
+// - Visual feedback for time states
 function SortableTaskItem({
   task,
   tasks,
@@ -269,10 +287,12 @@ function SortableTaskItem({
         <Card
           className={cn(
             "p-4 flex items-center justify-between group",
+            // Warning state: 5 minutes or less remaining
             remainingTime !== null &&
               remainingTime <= 5 &&
               remainingTime > 0 &&
               "bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800",
+            // Time-up state: 0 minutes remaining
             remainingTime !== null &&
               remainingTime <= 0 &&
               "bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800"
