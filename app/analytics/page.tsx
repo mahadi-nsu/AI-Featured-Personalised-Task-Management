@@ -206,35 +206,123 @@ export default function AnalyticsPage() {
           {/* Task Distribution */}
           <Card className="p-6">
             <h2 className="text-lg font-semibold mb-4">Task Distribution</h2>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={taskDistributionData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label
-                  >
-                    {taskDistributionData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={
-                          entry.name === "Done"
-                            ? COLORS.done
-                            : entry.name === "In Progress"
-                            ? COLORS.inProgress
-                            : COLORS.untouched
-                        }
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Pie Chart (existing) */}
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={taskDistributionData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label
+                    >
+                      {taskDistributionData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            entry.name === "Done"
+                              ? COLORS.done
+                              : entry.name === "In Progress"
+                              ? COLORS.inProgress
+                              : COLORS.untouched
+                          }
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Task Statistics */}
+              <div className="space-y-6">
+                {/* Total Tasks */}
+                <div>
+                  <div className="text-sm text-muted-foreground">
+                    Total Tasks
+                  </div>
+                  <div className="text-2xl font-semibold">
+                    {dateTasksOnly.length}
+                  </div>
+                </div>
+
+                {/* Status Breakdown */}
+                <div className="space-y-4">
+                  {/* Done Tasks */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium">Done</div>
+                      <div className="text-xs text-muted-foreground">
+                        {(
+                          (taskDistribution.done / dateTasksOnly.length) *
+                          100
+                        ).toFixed(1)}
+                        % of total
+                      </div>
+                    </div>
+                    <div className="text-lg font-semibold text-green-500">
+                      {taskDistribution.done}
+                    </div>
+                  </div>
+
+                  {/* In Progress Tasks */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium">In Progress</div>
+                      <div className="text-xs text-muted-foreground">
+                        {(
+                          (taskDistribution.inProgress / dateTasksOnly.length) *
+                          100
+                        ).toFixed(1)}
+                        % of total
+                      </div>
+                    </div>
+                    <div className="text-lg font-semibold text-blue-500">
+                      {taskDistribution.inProgress}
+                    </div>
+                  </div>
+
+                  {/* Untouched Tasks */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium">Untouched</div>
+                      <div className="text-xs text-muted-foreground">
+                        {(
+                          (taskDistribution.untouched / dateTasksOnly.length) *
+                          100
+                        ).toFixed(1)}
+                        % of total
+                      </div>
+                    </div>
+                    <div className="text-lg font-semibold text-gray-500">
+                      {taskDistribution.untouched}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Task Completion Rate */}
+                <div className="pt-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    Task Completion Rate
+                  </div>
+                  <div className="text-2xl font-semibold text-green-500">
+                    {(
+                      (taskDistribution.done / dateTasksOnly.length) *
+                      100
+                    ).toFixed(1)}
+                    %
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {taskDistribution.done} of {dateTasksOnly.length} tasks
+                    completed
+                  </div>
+                </div>
+              </div>
             </div>
           </Card>
 
@@ -271,7 +359,6 @@ export default function AnalyticsPage() {
                     endAngle={-270}
                   >
                     <RadialBar
-                      minAngle={15}
                       background
                       dataKey="value"
                       label={{
