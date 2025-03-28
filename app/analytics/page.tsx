@@ -443,79 +443,10 @@ export default function AnalyticsPage() {
                         "Time",
                       ]}
                     />
+
+                    <Legend />
                   </RadialBarChart>
                 </ResponsiveContainer>
-                {/* Time Distribution Legend */}
-                <div className="space-y-2 mt-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-gray-500" />
-                      <span>Remaining</span>
-                      <span className="text-xs text-muted-foreground ml-1">
-                        {(
-                          ((timeAnalytics.totalEstimatedTime -
-                            (timeAnalytics.completedTasksTime +
-                              timeAnalytics.inProgressTime)) /
-                            timeAnalytics.totalEstimatedTime) *
-                          100
-                        ).toFixed(1)}
-                        % of total time
-                      </span>
-                    </div>
-                    <span className="text-gray-500 font-medium">
-                      {Math.floor(
-                        (timeAnalytics.totalEstimatedTime -
-                          (timeAnalytics.completedTasksTime +
-                            timeAnalytics.inProgressTime)) /
-                          60
-                      )}
-                      h{" "}
-                      {(timeAnalytics.totalEstimatedTime -
-                        (timeAnalytics.completedTasksTime +
-                          timeAnalytics.inProgressTime)) %
-                        60}
-                      m
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-blue-500" />
-                      <span>In Progress</span>
-                      <span className="text-xs text-muted-foreground ml-1">
-                        {(
-                          (timeAnalytics.inProgressTime /
-                            timeAnalytics.totalEstimatedTime) *
-                          100
-                        ).toFixed(1)}
-                        % of total time
-                      </span>
-                    </div>
-                    <span className="text-blue-500 font-medium">
-                      {Math.floor(timeAnalytics.inProgressTime / 60)}h{" "}
-                      {timeAnalytics.inProgressTime % 60}m
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-green-500" />
-                      <span>Completed</span>
-                      <span className="text-xs text-muted-foreground ml-1">
-                        {(
-                          (timeAnalytics.completedTasksTime /
-                            timeAnalytics.totalEstimatedTime) *
-                          100
-                        ).toFixed(1)}
-                        % of total time
-                      </span>
-                    </div>
-                    <span className="text-green-500 font-medium">
-                      {Math.floor(timeAnalytics.completedTasksTime / 60)}h{" "}
-                      {timeAnalytics.completedTasksTime % 60}m
-                    </span>
-                  </div>
-                </div>
               </div>
 
               {/* Time Statistics */}
