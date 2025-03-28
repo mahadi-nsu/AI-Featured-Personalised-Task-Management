@@ -242,7 +242,7 @@ export default function AnalyticsPage() {
               {/* Task Statistics */}
               <div className="space-y-6">
                 {/* Total Tasks */}
-                <div>
+                <div className="mb-4">
                   <div className="text-sm text-muted-foreground">
                     Total Tasks
                   </div>
@@ -252,9 +252,9 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Status Breakdown */}
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* Done Tasks */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between border-l-2 border-green-500 pl-3">
                     <div>
                       <div className="text-sm font-medium">Done</div>
                       <div className="text-xs text-muted-foreground">
@@ -271,7 +271,7 @@ export default function AnalyticsPage() {
                   </div>
 
                   {/* In Progress Tasks */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between border-l-2 border-blue-500 pl-3">
                     <div>
                       <div className="text-sm font-medium">In Progress</div>
                       <div className="text-xs text-muted-foreground">
@@ -288,7 +288,7 @@ export default function AnalyticsPage() {
                   </div>
 
                   {/* Untouched Tasks */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between border-l-2 border-gray-500 pl-3">
                     <div>
                       <div className="text-sm font-medium">Untouched</div>
                       <div className="text-xs text-muted-foreground">
@@ -306,20 +306,22 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Task Completion Rate */}
-                <div className="pt-4 border-t">
-                  <div className="text-sm text-muted-foreground">
+                <div className="pt-4 mt-4 border-t">
+                  <div className="text-sm font-medium mb-3">
                     Task Completion Rate
                   </div>
-                  <div className="text-2xl font-semibold text-green-500">
-                    {(
-                      (taskDistribution.done / dateTasksOnly.length) *
-                      100
-                    ).toFixed(1)}
-                    %
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {taskDistribution.done} of {dateTasksOnly.length} tasks
-                    completed
+                  <div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-md">
+                    <div className="text-2xl font-semibold text-green-500">
+                      {(
+                        (taskDistribution.done / dateTasksOnly.length) *
+                        100
+                      ).toFixed(1)}
+                      %
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {taskDistribution.done} of {dateTasksOnly.length} tasks
+                      completed
+                    </div>
                   </div>
                 </div>
               </div>
