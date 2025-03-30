@@ -6,16 +6,34 @@ import { Task, TaskStatus } from "@/lib/utils";
 import { loadTasks } from "@/lib/taskStorage";
 import { Tag, Clock } from "lucide-react";
 
-export function CompletedTasks() {
+interface CompletedTasksProps {
+  selectedDate?: Date;
+}
+
+export function CompletedTasks({ selectedDate }: CompletedTasksProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     const loadedTasks = loadTasks();
-    const completedTasks = loadedTasks.filter(
-      (task) => task.status === TaskStatus.DONE
-    );
+    const completedTasks = loadedTasks.filter((task) => {
+      // First filter for completed tasks
+      if (task.status !== TaskStatus.DONE) return false;
+
+      // If selectedDate is provided, filter by date
+      if (selectedDate && task.date) {
+        const taskDate = new Date(task.date);
+        return (
+          taskDate.getDate() === selectedDate.getDate() &&
+          taskDate.getMonth() === selectedDate.getMonth() &&
+          taskDate.getFullYear() === selectedDate.getFullYear()
+        );
+      }
+
+      // If no selectedDate, show all completed tasks
+      return true;
+    });
     setTasks(completedTasks);
-  }, []);
+  }, [selectedDate]);
 
   return (
     <div className="space-y-2">
