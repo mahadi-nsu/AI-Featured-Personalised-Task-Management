@@ -146,7 +146,8 @@ function SortableTaskItem({
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
-  const [editedTitle, setEditedTitle] = useState("");
+  const [editedFeatureName, setEditedFeatureName] = useState("");
+  const [editedDescription, setEditedDescription] = useState("");
   const [editedPriority, setEditedPriority] = useState<
     TaskPriority | undefined
   >(undefined);
@@ -185,16 +186,18 @@ function SortableTaskItem({
 
   const startEditing = (task: Task) => {
     setEditingTask(task);
-    setEditedTitle(task.title);
+    setEditedFeatureName(task.featureName);
+    setEditedDescription(task.description);
     setEditedPriority(task.priority);
     setEditedHours(task.estimatedHours || 0);
     setEditedMinutes(task.estimatedMinutes || 0);
   };
 
   const saveEdit = () => {
-    if (editingTask && editedTitle.trim()) {
+    if (editingTask && editedFeatureName.trim() && editedDescription.trim()) {
       const updatedTasks = updateTask(editingTask.id, {
-        title: editedTitle.trim(),
+        featureName: editedFeatureName.trim(),
+        description: editedDescription.trim(),
         priority: editedPriority,
         estimatedHours: editedHours || undefined,
         estimatedMinutes: editedMinutes || undefined,
@@ -298,14 +301,15 @@ function SortableTaskItem({
                 <GripVertical className="h-4 w-4 text-muted-foreground" />
               </div>
               <div className="flex flex-col gap-1">
+                <span className="font-medium text-base text-primary">
+                  {task.featureName}
+                </span>
                 <span
-                  className={`${
-                    task.status === TaskStatus.DONE
-                      ? "line-through text-muted-foreground"
-                      : ""
+                  className={`text-sm text-muted-foreground ${
+                    task.status === TaskStatus.DONE ? "line-through" : ""
                   }`}
                 >
-                  {task.title}
+                  {task.description}
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {task.priority && (
@@ -400,9 +404,15 @@ function SortableTaskItem({
           </DialogHeader>
           <div className="py-4 space-y-4">
             <Input
-              value={editedTitle}
-              onChange={(e) => setEditedTitle(e.target.value)}
-              placeholder="Edit task title..."
+              value={editedFeatureName}
+              onChange={(e) => setEditedFeatureName(e.target.value)}
+              placeholder="Edit feature/bug name..."
+              className="w-full"
+            />
+            <Input
+              value={editedDescription}
+              onChange={(e) => setEditedDescription(e.target.value)}
+              placeholder="Edit description..."
               className="w-full"
             />
 
@@ -525,7 +535,8 @@ function SortableTaskItem({
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              task &quot;{deletingTask?.title}&quot;.
+              task &quot;{deletingTask?.featureName} -{" "}
+              {deletingTask?.description}&quot;.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -574,14 +585,15 @@ function DraggedTaskItem({ task }: { task: Task }) {
       <div className="flex items-center gap-4 flex-1">
         <div className="flex-1">
           <div className="flex flex-col gap-1">
+            <span className="font-medium text-base text-primary">
+              {task.featureName}
+            </span>
             <span
-              className={
-                task.status === TaskStatus.DONE
-                  ? "line-through text-muted-foreground"
-                  : ""
-              }
+              className={`text-sm text-muted-foreground ${
+                task.status === TaskStatus.DONE ? "line-through" : ""
+              }`}
             >
-              {task.title}
+              {task.description}
             </span>
             <div className="flex flex-wrap gap-2">
               {task.priority && (
@@ -616,7 +628,10 @@ export function DateTasks() {
   const [estimatedMinutes, setEstimatedMinutes] = useState<number>(0);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const { register, handleSubmit, reset } = useForm<{ title: string }>();
+  const { register, handleSubmit, reset } = useForm<{
+    featureName: string;
+    description: string;
+  }>();
 
   // Setup sensors for drag and drop
   const sensors = useSensors(
@@ -674,13 +689,14 @@ export function DateTasks() {
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
 
-  const createTask = (data: { title: string }) => {
+  const createTask = (data: { featureName: string; description: string }) => {
     // Format the date consistently
     const formattedDate = format(date, "yyyy-MM-dd");
 
     const newTask: Task = {
       id: crypto.randomUUID(),
-      title: data.title,
+      featureName: data.featureName,
+      description: data.description,
       status: TaskStatus.UNTOUCHED,
       date: formattedDate,
       createdAt: new Date().toISOString(),
@@ -779,18 +795,22 @@ export function DateTasks() {
 
         <Card className="p-6 shadow-sm">
           <form onSubmit={handleSubmit(createTask)} className="space-y-4">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-4">
               <Input
-                placeholder={`Add a task for ${format(
-                  date,
-                  "MMMM d, yyyy"
-                )}...`}
-                {...register("title", { required: true })}
+                placeholder="Feature/Bug Name..."
+                {...register("featureName", { required: true })}
                 className="flex-1"
               />
-              <Button type="submit" size="icon">
-                <Plus className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-4">
+                <Input
+                  placeholder="Feature/Bug Description..."
+                  {...register("description", { required: true })}
+                  className="flex-1"
+                />
+                <Button type="submit" size="icon">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
