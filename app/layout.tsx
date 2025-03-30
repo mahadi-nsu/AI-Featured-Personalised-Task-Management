@@ -31,6 +31,12 @@ export default function RootLayout({
             <div className="container mx-auto flex items-center justify-between">
               <div className="text-lg font-semibold">Task Management</div>
               <div className="flex items-center gap-4">
+                <Link href="/" className="hover:text-gray-300">
+                  Home
+                </Link>
+                <Link href="/ai-testing" className="hover:text-gray-300">
+                  AI Testing
+                </Link>
                 <Link href="/debug" className="hover:text-gray-300">
                   Debug
                 </Link>
