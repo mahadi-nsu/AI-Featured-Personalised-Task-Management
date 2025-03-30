@@ -13,15 +13,61 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useState, ReactNode } from "react";
+import { TestCases } from "../components/test-cases";
 
 interface CardProps {
   title: string;
   children: ReactNode;
 }
 
+interface TestCase {
+  id: string;
+  description: string;
+  inputData: string;
+  expected: string;
+}
+
 export default function AITestingPage() {
   const [date, setDate] = useState<Date>(new Date());
+  const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadedTaskId, setLoadedTaskId] = useState<string | null>(null);
   const today = new Date();
+
+  const handleGenerateTestCase = async (
+    featureName: string,
+    description: string,
+    taskId: string
+  ) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        "http://localhost:5001/generate-test-cases",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            featureName,
+            description,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to generate test cases");
+      }
+
+      const data = await response.json();
+      setTestCases(data.scenarios);
+      setLoadedTaskId(taskId);
+    } catch (error) {
+      console.error("Error generating test cases:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const Card = ({ title, children }: CardProps) => (
     <div className="border rounded-lg p-6">
@@ -43,12 +89,15 @@ export default function AITestingPage() {
         <TabsContent value="today" className="mt-0">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card title="Completed Tasks">
-              <CompletedTasks selectedDate={today} />
+              <CompletedTasks
+                selectedDate={today}
+                onGenerateTest={handleGenerateTestCase}
+                loadedTaskId={loadedTaskId}
+                isLoading={isLoading}
+              />
             </Card>
-            <Card title="All Tasks">
-              <div className="text-muted-foreground">
-                Right side content is temporarily hidden
-              </div>
+            <Card title="Test Cases">
+              <TestCases scenarios={testCases} isLoading={isLoading} />
             </Card>
           </div>
         </TabsContent>
@@ -81,12 +130,15 @@ export default function AITestingPage() {
                   </PopoverContent>
                 </Popover>
               </div>
-              <CompletedTasks selectedDate={date} />
+              <CompletedTasks
+                selectedDate={date}
+                onGenerateTest={handleGenerateTestCase}
+                loadedTaskId={loadedTaskId}
+                isLoading={isLoading}
+              />
             </div>
-            <Card title="All Tasks">
-              <div className="text-muted-foreground">
-                Right side content is temporarily hidden
-              </div>
+            <Card title="Test Cases">
+              <TestCases scenarios={testCases} isLoading={isLoading} />
             </Card>
           </div>
         </TabsContent>

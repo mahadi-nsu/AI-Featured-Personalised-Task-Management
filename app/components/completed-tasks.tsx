@@ -4,14 +4,27 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Task, TaskStatus } from "@/lib/utils";
 import { loadTasks } from "@/lib/taskStorage";
-import { Tag, Clock } from "lucide-react";
+import { Tag, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface CompletedTasksProps {
   selectedDate?: Date;
+  onGenerateTest: (
+    featureName: string,
+    description: string,
+    taskId: string
+  ) => void;
+  loadedTaskId: string | null;
+  isLoading: boolean;
 }
 
-export function CompletedTasks({ selectedDate }: CompletedTasksProps) {
+export function CompletedTasks({
+  selectedDate,
+  onGenerateTest,
+  loadedTaskId,
+  isLoading,
+}: CompletedTasksProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
@@ -52,8 +65,24 @@ export function CompletedTasks({ selectedDate }: CompletedTasksProps) {
               <span className="text-sm text-muted-foreground line-through mb-3">
                 {task.description}
               </span>
-              <Button className="w-full" variant="outline">
-                Generate AI Test Case
+              <Button
+                className="w-full"
+                variant={loadedTaskId === task.id ? "default" : "outline"}
+                onClick={() =>
+                  onGenerateTest(task.featureName, task.description, task.id)
+                }
+                disabled={isLoading}
+              >
+                {isLoading && loadedTaskId === task.id ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : loadedTaskId === task.id ? (
+                  "Data Fetched!"
+                ) : (
+                  "Generate AI Test Case"
+                )}
               </Button>
             </div>
           </Card>
