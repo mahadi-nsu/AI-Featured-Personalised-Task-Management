@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Task, TaskStatus } from "@/lib/utils";
 import { loadTasks } from "@/lib/taskStorage";
 import { Tag, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface CompletedTasksProps {
   selectedDate?: Date;
@@ -48,9 +49,12 @@ export function CompletedTasks({ selectedDate }: CompletedTasksProps) {
               <span className="font-medium text-base text-primary line-through">
                 {task.featureName}
               </span>
-              <span className="text-sm text-muted-foreground line-through">
+              <span className="text-sm text-muted-foreground line-through mb-3">
                 {task.description}
               </span>
+              <Button className="w-full" variant="outline">
+                Generate AI Test Case
+              </Button>
             </div>
           </Card>
         ))

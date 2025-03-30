@@ -12,10 +12,23 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useState } from "react";
+import { useState, ReactNode } from "react";
+
+interface CardProps {
+  title: string;
+  children: ReactNode;
+}
 
 export default function AITestingPage() {
   const [date, setDate] = useState<Date>(new Date());
+  const today = new Date();
+
+  const Card = ({ title, children }: CardProps) => (
+    <div className="border rounded-lg p-6">
+      <h2 className="text-xl font-semibold mb-4">{title}</h2>
+      {children}
+    </div>
+  );
 
   return (
     <div className="container mx-auto py-8">
@@ -29,16 +42,14 @@ export default function AITestingPage() {
 
         <TabsContent value="today" className="mt-0">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="border rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Completed Tasks</h2>
-              <CompletedTasks />
-            </div>
-            <div className="border rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">All Tasks</h2>
+            <Card title="Completed Tasks">
+              <CompletedTasks selectedDate={today} />
+            </Card>
+            <Card title="All Tasks">
               <div className="text-muted-foreground">
                 Right side content is temporarily hidden
               </div>
-            </div>
+            </Card>
           </div>
         </TabsContent>
 
@@ -72,12 +83,11 @@ export default function AITestingPage() {
               </div>
               <CompletedTasks selectedDate={date} />
             </div>
-            <div className="border rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">All Tasks</h2>
+            <Card title="All Tasks">
               <div className="text-muted-foreground">
                 Right side content is temporarily hidden
               </div>
-            </div>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
