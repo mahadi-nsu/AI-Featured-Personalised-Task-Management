@@ -1,9 +1,11 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface TestCase {
   id: string;
@@ -17,13 +19,39 @@ interface TestCasesProps {
   isLoading: boolean;
 }
 
+type TestStatus = "passed" | "failed" | "inappropriate" | null;
+
 export function TestCases({ scenarios, isLoading }: TestCasesProps) {
+  const [testStatuses, setTestStatuses] = useState<Record<string, TestStatus>>(
+    {}
+  );
+
   const formatInputData = (inputData: string) => {
     // Split by numbered items (1., 2., etc.)
     const items = inputData.split(/(?=\d+\.)/);
     return items
       .filter((item) => item.trim().length > 0)
       .map((item) => item.replace(/<br>/g, "").trim());
+  };
+
+  const handleStatusChange = (scenarioId: string, status: TestStatus) => {
+    setTestStatuses((prev) => ({
+      ...prev,
+      [scenarioId]: status,
+    }));
+  };
+
+  const getCardStyle = (status: TestStatus) => {
+    switch (status) {
+      case "passed":
+        return "bg-green-50 border-green-200";
+      case "failed":
+        return "bg-red-50 border-red-200";
+      case "inappropriate":
+        return "bg-gray-100 border-gray-200 opacity-75";
+      default:
+        return "";
+    }
   };
 
   const cleanScenarios = scenarios.filter((scenario) => scenario.id !== "---");
@@ -47,12 +75,24 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
   return (
     <div className="space-y-4">
       {cleanScenarios.map((scenario) => (
-        <Card key={scenario.id} className="p-4">
+        <Card
+          key={scenario.id}
+          className={cn(
+            "p-4 transition-all duration-200",
+            getCardStyle(testStatuses[scenario.id])
+          )}
+        >
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="font-medium text-sm text-primary">
                 {scenario.id}
               </span>
+              {testStatuses[scenario.id] === "inappropriate" && (
+                <Badge className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  Should be avoided
+                </Badge>
+              )}
             </div>
             <h3 className="font-semibold">
               {scenario.description.replace(/<br>/g, "")}
@@ -82,27 +122,38 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
                 <Button
                   className={cn(
                     "flex-1",
-                    "bg-green-600 hover:bg-green-700 text-white"
+                    "bg-green-600 hover:bg-green-700 text-white",
+                    testStatuses[scenario.id] === "passed" &&
+                      "ring-2 ring-green-600"
                   )}
                   variant="outline"
+                  onClick={() => handleStatusChange(scenario.id, "passed")}
                 >
                   Test Passed
                 </Button>
                 <Button
                   className={cn(
                     "flex-1",
-                    "bg-red-600 hover:bg-red-700 text-white"
+                    "bg-red-600 hover:bg-red-700 text-white",
+                    testStatuses[scenario.id] === "failed" &&
+                      "ring-2 ring-red-600"
                   )}
                   variant="outline"
+                  onClick={() => handleStatusChange(scenario.id, "failed")}
                 >
                   Test Failed
                 </Button>
                 <Button
                   className={cn(
                     "flex-1",
-                    "bg-gray-900 hover:bg-gray-800 text-white"
+                    "bg-gray-900 hover:bg-gray-800 text-white",
+                    testStatuses[scenario.id] === "inappropriate" &&
+                      "ring-2 ring-gray-900"
                   )}
                   variant="outline"
+                  onClick={() =>
+                    handleStatusChange(scenario.id, "inappropriate")
+                  }
                 >
                   Inappropriate test
                 </Button>
