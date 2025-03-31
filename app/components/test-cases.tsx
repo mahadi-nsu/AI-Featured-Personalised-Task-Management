@@ -16,6 +16,12 @@ interface TestCasesProps {
 }
 
 export function TestCases({ scenarios, isLoading }: TestCasesProps) {
+  const formatInputData = (inputData: string) => {
+    // Split by numbered items (1., 2., etc.)
+    const items = inputData.split(/(?=\d+\.)/);
+    return items.filter((item) => item.trim().length > 0);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -45,16 +51,24 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
             <h3 className="font-semibold">{scenario.description}</h3>
             <div className="space-y-2">
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground">
-                  Input Data:
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                  Input Data / Items to check:
                 </h4>
-                <p className="text-sm mt-1">{scenario.inputData}</p>
+                <ul className="list-none space-y-2 pl-4">
+                  {formatInputData(scenario.inputData).map((item, index) => (
+                    <li key={index} className="text-sm">
+                      {item.trim()}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">
                   Expected Result:
                 </h4>
-                <p className="text-sm mt-1">{scenario.expected}</p>
+                <p className="text-sm whitespace-pre-line pl-4">
+                  {scenario.expected}
+                </p>
               </div>
             </div>
           </div>
