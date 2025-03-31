@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -59,6 +59,34 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
     }
   };
 
+  const getStatusBadge = (status: TestStatus) => {
+    switch (status) {
+      case "passed":
+        return (
+          <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-200 gap-1">
+            <CheckCircle2 className="h-3 w-3" />
+            Test Passed
+          </Badge>
+        );
+      case "failed":
+        return (
+          <Badge className="bg-red-100 text-red-700 border-red-200 hover:bg-red-200 gap-1">
+            <XCircle className="h-3 w-3" />
+            Test Failed
+          </Badge>
+        );
+      case "inappropriate":
+        return (
+          <Badge className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            Should be avoided
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
   const cleanScenarios = scenarios.filter((scenario) => scenario.id !== "---");
 
   if (isLoading) {
@@ -92,12 +120,7 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
               <span className="font-medium text-sm text-primary">
                 {scenario.id}
               </span>
-              {testStatuses[scenario.id] === "inappropriate" && (
-                <Badge className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 gap-1">
-                  <AlertTriangle className="h-3 w-3" />
-                  Should be avoided
-                </Badge>
-              )}
+              {getStatusBadge(testStatuses[scenario.id])}
             </div>
             <h3 className="font-semibold">
               {scenario.description.replace(/<br>/g, "")}
