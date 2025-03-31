@@ -2,6 +2,8 @@
 
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface TestCase {
   id: string;
@@ -75,6 +77,35 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
                 <p className="text-sm whitespace-pre-line pl-4">
                   {scenario.expected.replace(/<br>/g, "")}
                 </p>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  className={cn(
+                    "flex-1",
+                    "bg-green-600 hover:bg-green-700 text-white"
+                  )}
+                  variant="outline"
+                >
+                  Test Passed
+                </Button>
+                <Button
+                  className={cn(
+                    "flex-1",
+                    "bg-red-600 hover:bg-red-700 text-white"
+                  )}
+                  variant="outline"
+                >
+                  Test Failed
+                </Button>
+                <Button
+                  className={cn(
+                    "flex-1",
+                    "bg-gray-900 hover:bg-gray-800 text-white"
+                  )}
+                  variant="outline"
+                >
+                  Inappropriate test
+                </Button>
               </div>
             </div>
           </div>
