@@ -79,7 +79,7 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
         return (
           <Badge className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 gap-1">
             <AlertTriangle className="h-3 w-3" />
-            Should be avoided
+            Test Should be avoided
           </Badge>
         );
       default:
