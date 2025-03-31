@@ -26,12 +26,17 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
     {}
   );
 
-  const formatInputData = (inputData: string) => {
+  const formatNumberedText = (text: string) => {
     // Split by numbered items (1., 2., etc.)
-    const items = inputData.split(/(?=\d+\.)/);
+    const items = text.split(/(?=\d+\.)/);
     return items
       .filter((item) => item.trim().length > 0)
       .map((item) => item.replace(/<br>/g, "").trim());
+  };
+
+  const hasNumberedFormat = (text: string) => {
+    // Check if the text contains numbered items (1., 2., etc.)
+    return /\d+\./.test(text);
   };
 
   const handleStatusChange = (scenarioId: string, status: TestStatus) => {
@@ -103,7 +108,7 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
                   Input Data / Items to check:
                 </h4>
                 <ul className="list-none space-y-2 pl-4">
-                  {formatInputData(scenario.inputData).map((item, index) => (
+                  {formatNumberedText(scenario.inputData).map((item, index) => (
                     <li key={index} className="text-sm">
                       {item.trim()}
                     </li>
@@ -114,9 +119,21 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">
                   Expected Result:
                 </h4>
-                <p className="text-sm whitespace-pre-line pl-4">
-                  {scenario.expected.replace(/<br>/g, "")}
-                </p>
+                {hasNumberedFormat(scenario.expected) ? (
+                  <ul className="list-none space-y-2 pl-4">
+                    {formatNumberedText(scenario.expected).map(
+                      (item, index) => (
+                        <li key={index} className="text-sm">
+                          {item.trim()}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                ) : (
+                  <p className="text-sm whitespace-pre-line pl-4">
+                    {scenario.expected.replace(/<br>/g, "")}
+                  </p>
+                )}
               </div>
               <div className="flex gap-2 mt-4">
                 <Button
