@@ -19,8 +19,12 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
   const formatInputData = (inputData: string) => {
     // Split by numbered items (1., 2., etc.)
     const items = inputData.split(/(?=\d+\.)/);
-    return items.filter((item) => item.trim().length > 0);
+    return items
+      .filter((item) => item.trim().length > 0)
+      .map((item) => item.replace(/<br>/g, "").trim());
   };
+
+  const cleanScenarios = scenarios.filter((scenario) => scenario.id !== "---");
 
   if (isLoading) {
     return (
@@ -30,7 +34,7 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
     );
   }
 
-  if (!scenarios || scenarios.length === 0) {
+  if (!cleanScenarios || cleanScenarios.length === 0) {
     return (
       <Card className="p-4">
         <p className="text-muted-foreground">No test cases generated yet.</p>
@@ -40,7 +44,7 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
 
   return (
     <div className="space-y-4">
-      {scenarios.map((scenario) => (
+      {cleanScenarios.map((scenario) => (
         <Card key={scenario.id} className="p-4">
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -48,7 +52,9 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
                 {scenario.id}
               </span>
             </div>
-            <h3 className="font-semibold">{scenario.description}</h3>
+            <h3 className="font-semibold">
+              {scenario.description.replace(/<br>/g, "")}
+            </h3>
             <div className="space-y-2">
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">
@@ -67,7 +73,7 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
                   Expected Result:
                 </h4>
                 <p className="text-sm whitespace-pre-line pl-4">
-                  {scenario.expected}
+                  {scenario.expected.replace(/<br>/g, "")}
                 </p>
               </div>
             </div>
