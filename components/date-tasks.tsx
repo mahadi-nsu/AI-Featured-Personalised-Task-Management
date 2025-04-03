@@ -74,6 +74,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { toast } from "sonner";
 
 // Date Tasks Component
 // This component manages tasks for specific dates with drag and drop functionality.
@@ -181,6 +182,11 @@ function SortableTaskItem({
       const updatedTasks = deleteTask(deletingTask.id);
       setDeletingTask(null);
       setTasks(updatedTasks);
+
+      // Show success toast
+      toast.success("Task deleted successfully", {
+        description: `"${deletingTask.featureName}" has been removed from your task list.`,
+      });
     }
   };
 
@@ -204,6 +210,11 @@ function SortableTaskItem({
       });
       setEditingTask(null);
       setTasks(updatedTasks);
+
+      // Show success toast
+      toast.success("Task updated successfully", {
+        description: `"${editedFeatureName}" has been updated.`,
+      });
     }
   };
 
@@ -710,6 +721,11 @@ export function DateTasks() {
     // Use the centralized storage
     const updatedTasks = addTask(newTask);
     setTasks(updatedTasks);
+
+    // Show success toast
+    toast.success("Task created successfully", {
+      description: `"${data.featureName}" has been added to your task list.`,
+    });
 
     // Reset form
     reset();

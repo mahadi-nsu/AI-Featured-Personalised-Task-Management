@@ -3,9 +3,12 @@
 import { Card } from "@/components/ui/card";
 import { Loader2, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, TaskPriority, TaskStatus } from "@/lib/utils";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { CreateTaskModal } from "@/components/create-task-modal";
+import { saveTasks, loadTasks } from "@/lib/taskStorage";
+import { toast } from "sonner";
 
 interface TestCase {
   id: string;
@@ -25,6 +28,10 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
   const [testStatuses, setTestStatuses] = useState<Record<string, TestStatus>>(
     {}
   );
+  const [selectedTestCase, setSelectedTestCase] = useState<TestCase | null>(
+    null
+  );
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
 
   const formatNumberedText = (text: string) => {
     // Split by numbered items (1., 2., etc.)
@@ -44,18 +51,71 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
       ...prev,
       [scenarioId]: status,
     }));
+
+    const testCase = scenarios.find((s) => s.id === scenarioId);
+    if (testCase) {
+      switch (status) {
+        case "passed":
+          toast.success("Test marked as passed", {
+            description: `Test case "${testCase.description
+              .split(".")[0]
+              .trim()}" has been marked as passed.`,
+          });
+          break;
+        case "failed":
+          toast.info("Creating task from failed test", {
+            description: `Opening task creation form for "${testCase.description
+              .split(".")[0]
+              .trim()}".`,
+          });
+          setSelectedTestCase(testCase);
+          setIsCreateTaskModalOpen(true);
+          break;
+        case "inappropriate":
+          toast.warning("Test marked as inappropriate", {
+            description: `Test case "${testCase.description
+              .split(".")[0]
+              .trim()}" has been marked as inappropriate.`,
+          });
+          break;
+      }
+    }
+  };
+
+  const handleCreateTask = (task: {
+    featureName: string;
+    description: string;
+    priority: TaskPriority;
+    estimatedHours: number;
+    estimatedMinutes: number;
+  }) => {
+    const existingTasks = loadTasks();
+    saveTasks([
+      ...existingTasks,
+      {
+        id: crypto.randomUUID(),
+        ...task,
+        status: TaskStatus.UNTOUCHED,
+        date: new Date().toISOString().split("T")[0],
+        createdAt: new Date().toISOString(),
+        order: 0,
+      },
+    ]);
+    toast.success("Task created from failed test", {
+      description: `"${task.featureName}" has been added to your task list.`,
+    });
   };
 
   const getCardStyle = (status: TestStatus) => {
     switch (status) {
       case "passed":
-        return "bg-green-50 border-green-200";
+        return "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800";
       case "failed":
-        return "bg-red-50 border-red-200";
+        return "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800";
       case "inappropriate":
-        return "bg-gray-100 border-gray-200 opacity-75";
+        return "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700";
       default:
-        return "";
+        return "dark:bg-gray-950/50";
     }
   };
 
@@ -63,21 +123,21 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
     switch (status) {
       case "passed":
         return (
-          <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-200 gap-1">
+          <Badge className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 hover:bg-green-200 dark:hover:bg-green-800 gap-1">
             <CheckCircle2 className="h-3 w-3" />
             Test Passed
           </Badge>
         );
       case "failed":
         return (
-          <Badge className="bg-red-100 text-red-700 border-red-200 hover:bg-red-200 gap-1">
+          <Badge className="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 hover:bg-purple-200 dark:hover:bg-purple-800 gap-1">
             <XCircle className="h-3 w-3" />
             Test Failed
           </Badge>
         );
       case "inappropriate":
         return (
-          <Badge className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 gap-1">
+          <Badge className="bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-800 gap-1">
             <AlertTriangle className="h-3 w-3" />
             Test Should be avoided
           </Badge>
@@ -106,102 +166,122 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {cleanScenarios.map((scenario) => (
-        <Card
-          key={scenario.id}
-          className={cn(
-            "p-4 transition-all duration-200",
-            getCardStyle(testStatuses[scenario.id])
-          )}
-        >
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-sm text-primary">
-                {scenario.id}
-              </span>
-              {getStatusBadge(testStatuses[scenario.id])}
-            </div>
-            <h3 className="font-semibold">
-              {scenario.description.replace(/<br>/g, "")}
-            </h3>
-            <div className="space-y-2">
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                  Input Data / Items to check:
-                </h4>
-                <ul className="list-none space-y-2 pl-4">
-                  {formatNumberedText(scenario.inputData).map((item, index) => (
-                    <li key={index} className="text-sm">
-                      {item.trim()}
-                    </li>
-                  ))}
-                </ul>
+    <>
+      <div className="space-y-4">
+        {cleanScenarios.map((scenario) => (
+          <Card
+            key={scenario.id}
+            className={cn(
+              "p-4 transition-all duration-200",
+              getCardStyle(testStatuses[scenario.id])
+            )}
+          >
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-sm text-primary">
+                  {scenario.id}
+                </span>
+                {getStatusBadge(testStatuses[scenario.id])}
               </div>
-              <div className="mt-4">
-                <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                  Expected Result:
-                </h4>
-                {hasNumberedFormat(scenario.expected) ? (
+              <h3 className="font-semibold text-foreground">
+                {scenario.description.replace(/<br>/g, "")}
+              </h3>
+              <div className="space-y-2">
+                <div>
+                  <h4 className="text-sm font-medium text-foreground/80 mb-2">
+                    Input Data / Items to check:
+                  </h4>
                   <ul className="list-none space-y-2 pl-4">
-                    {formatNumberedText(scenario.expected).map(
+                    {formatNumberedText(scenario.inputData).map(
                       (item, index) => (
-                        <li key={index} className="text-sm">
+                        <li key={index} className="text-sm text-foreground/80">
                           {item.trim()}
                         </li>
                       )
                     )}
                   </ul>
-                ) : (
-                  <p className="text-sm whitespace-pre-line pl-4">
-                    {scenario.expected.replace(/<br>/g, "")}
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2 mt-4">
-                <Button
-                  className={cn(
-                    "flex-1",
-                    "bg-green-600 hover:bg-green-700 text-white",
-                    testStatuses[scenario.id] === "passed" &&
-                      "ring-2 ring-green-600"
+                </div>
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-foreground/80 mb-2">
+                    Expected Result:
+                  </h4>
+                  {hasNumberedFormat(scenario.expected) ? (
+                    <ul className="list-none space-y-2 pl-4">
+                      {formatNumberedText(scenario.expected).map(
+                        (item, index) => (
+                          <li
+                            key={index}
+                            className="text-sm text-foreground/80"
+                          >
+                            {item.trim()}
+                          </li>
+                        )
+                      )}
+                    </ul>
+                  ) : (
+                    <p className="text-sm whitespace-pre-line pl-4 text-foreground/80">
+                      {scenario.expected.replace(/<br>/g, "")}
+                    </p>
                   )}
-                  variant="outline"
-                  onClick={() => handleStatusChange(scenario.id, "passed")}
-                >
-                  Test Passed
-                </Button>
-                <Button
-                  className={cn(
-                    "flex-1",
-                    "bg-red-600 hover:bg-red-700 text-white",
-                    testStatuses[scenario.id] === "failed" &&
-                      "ring-2 ring-red-600"
-                  )}
-                  variant="outline"
-                  onClick={() => handleStatusChange(scenario.id, "failed")}
-                >
-                  Test Failed
-                </Button>
-                <Button
-                  className={cn(
-                    "flex-1",
-                    "bg-gray-900 hover:bg-gray-800 text-white",
-                    testStatuses[scenario.id] === "inappropriate" &&
-                      "ring-2 ring-gray-900"
-                  )}
-                  variant="outline"
-                  onClick={() =>
-                    handleStatusChange(scenario.id, "inappropriate")
-                  }
-                >
-                  Inappropriate test
-                </Button>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    className={cn(
+                      "flex-1",
+                      testStatuses[scenario.id] === "passed"
+                        ? "bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-800 ring-2 ring-green-600 dark:ring-green-500"
+                        : "bg-green-100 hover:bg-green-200 text-green-800 dark:bg-green-900/50 dark:hover:bg-green-900 dark:text-green-300"
+                    )}
+                    variant="outline"
+                    onClick={() => handleStatusChange(scenario.id, "passed")}
+                  >
+                    Test Passed
+                  </Button>
+                  <Button
+                    className={cn(
+                      "flex-1",
+                      testStatuses[scenario.id] === "failed"
+                        ? "bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-700 dark:hover:bg-purple-800 ring-2 ring-purple-600 dark:ring-purple-500"
+                        : "bg-purple-100 hover:bg-purple-200 text-purple-800 dark:bg-purple-900/50 dark:hover:bg-purple-900 dark:text-purple-300"
+                    )}
+                    variant="outline"
+                    onClick={() => handleStatusChange(scenario.id, "failed")}
+                  >
+                    Test Failed
+                  </Button>
+                  <Button
+                    className={cn(
+                      "flex-1",
+                      testStatuses[scenario.id] === "inappropriate"
+                        ? "bg-gray-800 hover:bg-gray-900 text-white dark:bg-gray-700 dark:hover:bg-gray-800 ring-2 ring-gray-800 dark:ring-gray-600"
+                        : "bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300"
+                    )}
+                    variant="outline"
+                    onClick={() =>
+                      handleStatusChange(scenario.id, "inappropriate")
+                    }
+                  >
+                    Inappropriate test
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
-      ))}
-    </div>
+          </Card>
+        ))}
+      </div>
+
+      {selectedTestCase && (
+        <CreateTaskModal
+          isOpen={isCreateTaskModalOpen}
+          onClose={() => {
+            setIsCreateTaskModalOpen(false);
+            setSelectedTestCase(null);
+          }}
+          onSubmit={handleCreateTask}
+          defaultFeatureName={selectedTestCase.description.split(".")[0].trim()}
+          defaultDescription={`Failed Test Case: ${selectedTestCase.description}\n\nExpected Result:\n${selectedTestCase.expected}`}
+        />
+      )}
+    </>
   );
 }

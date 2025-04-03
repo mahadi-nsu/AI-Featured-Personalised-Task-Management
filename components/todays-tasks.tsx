@@ -74,6 +74,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 // View modes
 type ViewMode = "list" | "kanban";
@@ -187,6 +188,16 @@ function SortableTaskItem({
   const updateTaskStatus = (task: Task, status: TaskStatus) => {
     const updatedTasks = updateTask(task.id, { status });
     setTasks(updatedTasks);
+
+    const statusMessages = {
+      [TaskStatus.UNTOUCHED]: "marked as untouched",
+      [TaskStatus.IN_PROGRESS]: "moved to in progress",
+      [TaskStatus.DONE]: "marked as completed",
+    };
+
+    toast.success("Task status updated", {
+      description: `"${task.featureName}" has been ${statusMessages[status]}.`,
+    });
   };
 
   const startDelete = (task: Task) => {
@@ -198,6 +209,9 @@ function SortableTaskItem({
       const updatedTasks = deleteTask(deletingTask.id);
       setDeletingTask(null);
       setTasks(updatedTasks);
+      toast.success("Task deleted successfully", {
+        description: `"${deletingTask.featureName}" has been removed from your task list.`,
+      });
     }
   };
 
@@ -221,6 +235,9 @@ function SortableTaskItem({
       });
       setEditingTask(null);
       setTasks(updatedTasks);
+      toast.success("Task updated successfully", {
+        description: `"${editedFeatureName}" has been updated.`,
+      });
     }
   };
 
@@ -660,6 +677,16 @@ function KanbanTaskItem({
   const updateTaskStatus = (task: Task, status: TaskStatus) => {
     const updatedTasks = updateTask(task.id, { status });
     setTasks(updatedTasks);
+
+    const statusMessages = {
+      [TaskStatus.UNTOUCHED]: "marked as untouched",
+      [TaskStatus.IN_PROGRESS]: "moved to in progress",
+      [TaskStatus.DONE]: "marked as completed",
+    };
+
+    toast.success("Task status updated", {
+      description: `"${task.featureName}" has been ${statusMessages[status]}.`,
+    });
   };
 
   const startDelete = (task: Task) => {
@@ -671,6 +698,9 @@ function KanbanTaskItem({
       const updatedTasks = deleteTask(deletingTask.id);
       setDeletingTask(null);
       setTasks(updatedTasks);
+      toast.success("Task deleted successfully", {
+        description: `"${deletingTask.featureName}" has been removed from your task list.`,
+      });
     }
   };
 
@@ -694,6 +724,9 @@ function KanbanTaskItem({
       });
       setEditingTask(null);
       setTasks(updatedTasks);
+      toast.success("Task updated successfully", {
+        description: `"${editedFeatureName}" has been updated.`,
+      });
     }
   };
 
@@ -1286,6 +1319,11 @@ export function TodaysTasks() {
 
     const updatedTasks = addTask(newTask);
     setTasks(updatedTasks);
+
+    // Show success toast
+    toast.success("Task created successfully", {
+      description: `"${data.featureName}" has been added to your task list.`,
+    });
 
     // Reset form
     reset();
