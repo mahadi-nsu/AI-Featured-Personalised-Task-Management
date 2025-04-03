@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { CreateTaskModal } from "@/components/create-task-modal";
 import { saveTasks, loadTasks } from "@/lib/taskStorage";
+import { toast } from "sonner";
 
 interface TestCase {
   id: string;
@@ -51,11 +52,32 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
       [scenarioId]: status,
     }));
 
-    if (status === "failed") {
-      const testCase = scenarios.find((s) => s.id === scenarioId);
-      if (testCase) {
-        setSelectedTestCase(testCase);
-        setIsCreateTaskModalOpen(true);
+    const testCase = scenarios.find((s) => s.id === scenarioId);
+    if (testCase) {
+      switch (status) {
+        case "passed":
+          toast.success("Test marked as passed", {
+            description: `Test case "${testCase.description
+              .split(".")[0]
+              .trim()}" has been marked as passed.`,
+          });
+          break;
+        case "failed":
+          toast.info("Creating task from failed test", {
+            description: `Opening task creation form for "${testCase.description
+              .split(".")[0]
+              .trim()}".`,
+          });
+          setSelectedTestCase(testCase);
+          setIsCreateTaskModalOpen(true);
+          break;
+        case "inappropriate":
+          toast.warning("Test marked as inappropriate", {
+            description: `Test case "${testCase.description
+              .split(".")[0]
+              .trim()}" has been marked as inappropriate.`,
+          });
+          break;
       }
     }
   };
@@ -79,6 +101,9 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
         order: 0,
       },
     ]);
+    toast.success("Task created from failed test", {
+      description: `"${task.featureName}" has been added to your task list.`,
+    });
   };
 
   const getCardStyle = (status: TestStatus) => {
