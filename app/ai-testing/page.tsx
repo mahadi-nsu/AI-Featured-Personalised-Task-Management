@@ -42,7 +42,7 @@ export default function AITestingPage() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        "http://localhost:5001/generate-test-cases",
+        "https://gemini-ai-integration-golang.onrender.com/generate-test-cases",
         {
           method: "POST",
           headers: {
