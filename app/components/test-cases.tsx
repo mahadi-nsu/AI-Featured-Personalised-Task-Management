@@ -64,6 +64,8 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
     featureName: string;
     description: string;
     priority: TaskPriority;
+    estimatedHours: number;
+    estimatedMinutes: number;
   }) => {
     const existingTasks = loadTasks();
     saveTasks([
@@ -75,8 +77,6 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
         date: new Date().toISOString().split("T")[0],
         createdAt: new Date().toISOString(),
         order: 0,
-        estimatedHours: 0,
-        estimatedMinutes: 0,
       },
     ]);
   };
@@ -86,7 +86,7 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
       case "passed":
         return "bg-green-50 border-green-200";
       case "failed":
-        return "bg-red-50 border-red-200";
+        return "bg-purple-50 border-purple-200";
       case "inappropriate":
         return "bg-gray-100 border-gray-200 opacity-75";
       default:
@@ -212,9 +212,9 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
                   <Button
                     className={cn(
                       "flex-1",
-                      "bg-red-600 hover:bg-red-700 text-white",
+                      "bg-purple-600 hover:bg-purple-700 text-white",
                       testStatuses[scenario.id] === "failed" &&
-                        "ring-2 ring-red-600"
+                        "ring-2 ring-purple-600"
                     )}
                     variant="outline"
                     onClick={() => handleStatusChange(scenario.id, "failed")}

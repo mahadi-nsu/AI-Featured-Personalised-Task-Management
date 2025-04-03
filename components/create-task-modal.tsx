@@ -22,6 +22,8 @@ interface CreateTaskModalProps {
     featureName: string;
     description: string;
     priority: TaskPriority;
+    estimatedHours: number;
+    estimatedMinutes: number;
   }) => void;
   defaultFeatureName?: string;
   defaultDescription?: string;
@@ -37,6 +39,8 @@ export function CreateTaskModal({
   const [featureName, setFeatureName] = useState(defaultFeatureName);
   const [description, setDescription] = useState(defaultDescription);
   const [priority, setPriority] = useState<TaskPriority>(TaskPriority.HIGH);
+  const [estimatedHours, setEstimatedHours] = useState(0);
+  const [estimatedMinutes, setEstimatedMinutes] = useState(0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,13 +48,15 @@ export function CreateTaskModal({
       featureName,
       description,
       priority,
+      estimatedHours,
+      estimatedMinutes,
     });
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[467px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Create New Task</DialogTitle>
@@ -90,6 +96,31 @@ export function CreateTaskModal({
                 <option value={TaskPriority.MEDIUM}>Medium</option>
                 <option value={TaskPriority.LOW}>Low</option>
               </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="estimatedHours">Estimated Hours</Label>
+                <Input
+                  id="estimatedHours"
+                  type="number"
+                  min="0"
+                  value={estimatedHours}
+                  onChange={(e) => setEstimatedHours(Number(e.target.value))}
+                  placeholder="Hours"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="estimatedMinutes">Estimated Minutes</Label>
+                <Input
+                  id="estimatedMinutes"
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={estimatedMinutes}
+                  onChange={(e) => setEstimatedMinutes(Number(e.target.value))}
+                  placeholder="Minutes"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
