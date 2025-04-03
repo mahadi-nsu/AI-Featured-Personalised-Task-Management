@@ -375,7 +375,7 @@ function SortableTaskItem({
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap justify-center">
             {remainingTime !== null &&
               remainingTime <= 5 &&
               remainingTime > 0 && (
@@ -403,28 +403,30 @@ function SortableTaskItem({
                   </div>
                 </Button>
               )}
-            <Select
-              value={task.status}
-              onValueChange={(value) =>
-                updateTaskStatus(task, value as TaskStatus)
-              }
-            >
-              <SelectTrigger
-                className={`w-[140px] ${getStatusColor(
-                  task.status as TaskStatus
-                )}`}
-              >
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={TaskStatus.UNTOUCHED}>Untouched</SelectItem>
-                <SelectItem value={TaskStatus.IN_PROGRESS}>
-                  In Progress
-                </SelectItem>
-                <SelectItem value={TaskStatus.DONE}>Done</SelectItem>
-              </SelectContent>
-            </Select>
             <div className="flex items-center gap-2">
+              <Select
+                value={task.status}
+                onValueChange={(value) =>
+                  updateTaskStatus(task, value as TaskStatus)
+                }
+              >
+                <SelectTrigger
+                  className={`w-[140px] ${getStatusColor(
+                    task.status as TaskStatus
+                  )}`}
+                >
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={TaskStatus.UNTOUCHED}>
+                    Untouched
+                  </SelectItem>
+                  <SelectItem value={TaskStatus.IN_PROGRESS}>
+                    In Progress
+                  </SelectItem>
+                  <SelectItem value={TaskStatus.DONE}>Done</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 variant="ghost"
                 size="icon"
@@ -887,43 +889,45 @@ function KanbanTaskItem({
                       </div>
                     </Button>
                   )}
-                <Select
-                  value={task.status}
-                  onValueChange={(value) =>
-                    updateTaskStatus(task, value as TaskStatus)
-                  }
-                >
-                  <SelectTrigger
-                    className={`w-[140px] ${getStatusColor(
-                      task.status as TaskStatus
-                    )}`}
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={task.status}
+                    onValueChange={(value) =>
+                      updateTaskStatus(task, value as TaskStatus)
+                    }
                   >
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={TaskStatus.UNTOUCHED}>
-                      Untouched
-                    </SelectItem>
-                    <SelectItem value={TaskStatus.IN_PROGRESS}>
-                      In Progress
-                    </SelectItem>
-                    <SelectItem value={TaskStatus.DONE}>Done</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => startEditing(task)}
-                >
-                  <Pencil className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => startDelete(task)}
-                >
-                  <Trash2 className="h-5 w-5 text-destructive" />
-                </Button>
+                    <SelectTrigger
+                      className={`w-[140px] ${getStatusColor(
+                        task.status as TaskStatus
+                      )}`}
+                    >
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={TaskStatus.UNTOUCHED}>
+                        Untouched
+                      </SelectItem>
+                      <SelectItem value={TaskStatus.IN_PROGRESS}>
+                        In Progress
+                      </SelectItem>
+                      <SelectItem value={TaskStatus.DONE}>Done</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => startEditing(task)}
+                  >
+                    <Pencil className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => startDelete(task)}
+                  >
+                    <Trash2 className="h-5 w-5 text-destructive" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
