@@ -442,8 +442,19 @@ export default function AnalyticsPage() {
                         `${Math.floor(value / 60)}h ${value % 60}m`,
                         "Time",
                       ]}
+                      contentStyle={{
+                        backgroundColor: "#FDF6E9",
+                        border: "1px solid #E6D5B8",
+                        color: "#8B4513",
+                        borderRadius: "var(--radius)",
+                        boxShadow:
+                          "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+                      }}
+                      labelStyle={{
+                        color: "#8B4513",
+                        fontWeight: 500,
+                      }}
                     />
-
                     <Legend />
                   </RadialBarChart>
                 </ResponsiveContainer>
@@ -577,6 +588,18 @@ export default function AnalyticsPage() {
                         `${value} task${value !== 1 ? "s" : ""}`,
                         `${props.payload.name} Priority`,
                       ]}
+                      contentStyle={{
+                        backgroundColor: "#FDF6E9",
+                        border: "1px solid #E6D5B8",
+                        color: "#8B4513",
+                        borderRadius: "var(--radius)",
+                        boxShadow:
+                          "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+                      }}
+                      labelStyle={{
+                        color: "#8B4513",
+                        fontWeight: 500,
+                      }}
                     />
                     <Legend />
                     <Bar dataKey="value">
