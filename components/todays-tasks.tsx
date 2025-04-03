@@ -307,7 +307,7 @@ function SortableTaskItem({
       <div ref={setNodeRef} style={style} className="touch-none">
         <Card
           className={cn(
-            "p-4 flex items-center justify-between group",
+            "p-3 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 group",
             // Warning state: 5 minutes or less remaining
             remainingTime !== null &&
               remainingTime <= 5 &&
@@ -319,16 +319,16 @@ function SortableTaskItem({
               "bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800"
           )}
         >
-          <div className="flex items-center gap-4 flex-1">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
             <div
               {...attributes}
               {...listeners}
-              className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded-md"
+              className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded-md mt-1"
             >
               <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
-            <div className="flex flex-col gap-1">
-              <span className="font-medium text-base text-primary">
+            <div className="flex flex-col gap-1 min-w-0 flex-1">
+              <span className="font-medium text-base text-primary truncate">
                 {task.featureName}
               </span>
               <span
@@ -338,7 +338,7 @@ function SortableTaskItem({
               >
                 {task.description}
               </span>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mt-1">
                 {task.priority && (
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
@@ -375,7 +375,7 @@ function SortableTaskItem({
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {remainingTime !== null &&
               remainingTime <= 5 &&
               remainingTime > 0 && (
@@ -449,7 +449,7 @@ function SortableTaskItem({
         open={editingTask !== null}
         onOpenChange={() => setEditingTask(null)}
       >
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Edit Task</DialogTitle>
           </DialogHeader>
