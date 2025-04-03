@@ -224,34 +224,36 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
                     </p>
                   )}
                 </div>
-                <div className="flex gap-2 mt-4">
+                <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                  <div className="flex gap-2">
+                    <Button
+                      className={cn(
+                        "flex-1",
+                        testStatuses[scenario.id] === "passed"
+                          ? "bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-800 ring-2 ring-green-600 dark:ring-green-500"
+                          : "bg-green-100 hover:bg-green-200 text-green-800 dark:bg-green-900/50 dark:hover:bg-green-900 dark:text-green-300"
+                      )}
+                      variant="outline"
+                      onClick={() => handleStatusChange(scenario.id, "passed")}
+                    >
+                      Test Passed
+                    </Button>
+                    <Button
+                      className={cn(
+                        "flex-1",
+                        testStatuses[scenario.id] === "failed"
+                          ? "bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-700 dark:hover:bg-purple-800 ring-2 ring-purple-600 dark:ring-purple-500"
+                          : "bg-purple-100 hover:bg-purple-200 text-purple-800 dark:bg-purple-900/50 dark:hover:bg-purple-900 dark:text-purple-300"
+                      )}
+                      variant="outline"
+                      onClick={() => handleStatusChange(scenario.id, "failed")}
+                    >
+                      Test Failed
+                    </Button>
+                  </div>
                   <Button
                     className={cn(
-                      "flex-1",
-                      testStatuses[scenario.id] === "passed"
-                        ? "bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-800 ring-2 ring-green-600 dark:ring-green-500"
-                        : "bg-green-100 hover:bg-green-200 text-green-800 dark:bg-green-900/50 dark:hover:bg-green-900 dark:text-green-300"
-                    )}
-                    variant="outline"
-                    onClick={() => handleStatusChange(scenario.id, "passed")}
-                  >
-                    Test Passed
-                  </Button>
-                  <Button
-                    className={cn(
-                      "flex-1",
-                      testStatuses[scenario.id] === "failed"
-                        ? "bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-700 dark:hover:bg-purple-800 ring-2 ring-purple-600 dark:ring-purple-500"
-                        : "bg-purple-100 hover:bg-purple-200 text-purple-800 dark:bg-purple-900/50 dark:hover:bg-purple-900 dark:text-purple-300"
-                    )}
-                    variant="outline"
-                    onClick={() => handleStatusChange(scenario.id, "failed")}
-                  >
-                    Test Failed
-                  </Button>
-                  <Button
-                    className={cn(
-                      "flex-1",
+                      "w-full sm:w-auto",
                       testStatuses[scenario.id] === "inappropriate"
                         ? "bg-gray-800 hover:bg-gray-900 text-white dark:bg-gray-700 dark:hover:bg-gray-800 ring-2 ring-gray-800 dark:ring-gray-600"
                         : "bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300"
