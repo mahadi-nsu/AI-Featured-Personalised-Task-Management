@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import {
   Select,
@@ -459,11 +460,11 @@ function SortableTaskItem({
               placeholder="Edit feature/bug name..."
               className="w-full"
             />
-            <Input
+            <Textarea
               value={editedDescription}
               onChange={(e) => setEditedDescription(e.target.value)}
               placeholder="Edit description..."
-              className="w-full"
+              className="w-full min-h-[100px]"
             />
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center">
@@ -945,11 +946,11 @@ function KanbanTaskItem({
               placeholder="Edit feature/bug name..."
               className="w-full"
             />
-            <Input
+            <Textarea
               value={editedDescription}
               onChange={(e) => setEditedDescription(e.target.value)}
               placeholder="Edit description..."
-              className="w-full"
+              className="w-full min-h-[100px]"
             />
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center">
@@ -1567,10 +1568,10 @@ export function TodaysTasks() {
                 className="flex-1"
               />
               <div className="flex items-center gap-4">
-                <Input
+                <Textarea
                   placeholder="Feature/Bug Description..."
                   {...register("description", { required: true })}
-                  className="flex-1"
+                  className="flex-1 min-h-[100px]"
                 />
                 <Button type="submit" size="icon">
                   <Plus className="h-4 w-4" />
