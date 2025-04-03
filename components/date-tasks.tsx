@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -420,11 +421,11 @@ function SortableTaskItem({
               placeholder="Edit feature/bug name..."
               className="w-full"
             />
-            <Input
+            <Textarea
               value={editedDescription}
               onChange={(e) => setEditedDescription(e.target.value)}
               placeholder="Edit description..."
-              className="w-full"
+              className="w-full min-h-[100px]"
             />
 
             <div className="space-y-2">
@@ -818,10 +819,10 @@ export function DateTasks() {
                 className="flex-1"
               />
               <div className="flex items-center gap-4">
-                <Input
+                <Textarea
                   placeholder="Feature/Bug Description..."
                   {...register("description", { required: true })}
-                  className="flex-1"
+                  className="flex-1 min-h-[100px]"
                 />
                 <Button type="submit" size="icon">
                   <Plus className="h-4 w-4" />
