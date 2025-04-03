@@ -288,7 +288,7 @@ function SortableTaskItem({
       <div ref={setNodeRef} style={style} className="touch-none">
         <Card
           className={cn(
-            "p-4 w-full shadow-md opacity-90 border-2",
+            "p-3 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 group",
             task.status === TaskStatus.IN_PROGRESS &&
               !remainingTime &&
               "border-primary",
@@ -303,63 +303,63 @@ function SortableTaskItem({
               "border-red-400 bg-red-50 dark:bg-red-500/20"
           )}
         >
-          <div className="flex justify-between items-start">
-            <div className="flex items-center gap-4">
-              <div
-                {...attributes}
-                {...listeners}
-                className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded-md"
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded-md mt-1"
+            >
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="flex flex-col gap-1 min-w-0 flex-1">
+              <span className="font-medium text-base text-primary truncate">
+                {task.featureName}
+              </span>
+              <span
+                className={`text-sm text-muted-foreground ${
+                  task.status === TaskStatus.DONE ? "line-through" : ""
+                }`}
               >
-                <GripVertical className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="font-medium text-base text-primary">
-                  {task.featureName}
-                </span>
-                <span
-                  className={`text-sm text-muted-foreground ${
-                    task.status === TaskStatus.DONE ? "line-through" : ""
-                  }`}
-                >
-                  {task.description}
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {task.priority && (
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
-                        task.priority
-                      )}`}
-                    >
-                      <Tag className="h-3 w-3 mr-1" />
-                      {task.priority}
-                    </span>
-                  )}
-                  {getEstimatedTimeDisplay(task) && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-950/20 dark:border-blue-800 dark:text-blue-400">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {getEstimatedTimeDisplay(task)}
-                    </span>
-                  )}
-                  {remainingTime !== null && (
-                    <span
-                      className={cn(
-                        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
-                        remainingTime <= 0
-                          ? "bg-red-100 text-red-800 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/20"
-                          : remainingTime <= 5
-                          ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/20"
-                          : "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-400 dark:border-yellow-500/20"
-                      )}
-                    >
-                      <Clock className="h-3 w-3 mr-1" />
-                      {remainingTime <= 0
-                        ? "Time's Up!"
-                        : `${formatTime(remainingTime)} remaining`}
-                    </span>
-                  )}
-                </div>
+                {task.description}
+              </span>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {task.priority && (
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
+                      task.priority
+                    )}`}
+                  >
+                    <Tag className="h-3 w-3 mr-1" />
+                    {task.priority}
+                  </span>
+                )}
+                {getEstimatedTimeDisplay(task) && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-950/20 dark:border-blue-800 dark:text-blue-400">
+                    <Clock className="h-3 w-3 mr-1" />
+                    {getEstimatedTimeDisplay(task)}
+                  </span>
+                )}
+                {remainingTime !== null && (
+                  <span
+                    className={cn(
+                      "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                      remainingTime <= 0
+                        ? "bg-red-100 text-red-800 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/20"
+                        : remainingTime <= 5
+                        ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/20"
+                        : "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-400 dark:border-yellow-500/20"
+                    )}
+                  >
+                    <Clock className="h-3 w-3 mr-1" />
+                    {remainingTime <= 0
+                      ? "Time's Up!"
+                      : `${formatTime(remainingTime)} remaining`}
+                  </span>
+                )}
               </div>
             </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap justify-center">
             <div className="flex items-center gap-2">
               <Select
                 value={task.status}
@@ -384,22 +384,20 @@ function SortableTaskItem({
                   <SelectItem value={TaskStatus.DONE}>Done</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => startEditing(task)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => startDelete(task)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => startEditing(task)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => startDelete(task)}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
             </div>
           </div>
         </Card>
