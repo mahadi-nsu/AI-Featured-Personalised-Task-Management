@@ -1,4 +1,4 @@
-import { Task, TaskStatus } from "./utils";
+import { Task, TaskStatus, TaskPriority } from "./utils";
 
 // Interface for old todos format
 interface OldTodo {
@@ -43,11 +43,15 @@ export const loadTasks = (): Task[] => {
 
       const migratedTasks: Task[] = todos.map((todo, index) => ({
         id: todo.id,
-        title: todo.title,
+        featureName: todo.title,
+        description: "",
         status: todo.isComplete ? TaskStatus.DONE : TaskStatus.UNTOUCHED,
         date: formattedDate,
         createdAt: todo.createdAt,
-        order: index, // Add order property based on array index
+        order: index,
+        priority: TaskPriority.MEDIUM,
+        estimatedHours: undefined,
+        estimatedMinutes: undefined,
       }));
 
       // Save migrated tasks
@@ -58,6 +62,85 @@ export const loadTasks = (): Task[] => {
 
       return migratedTasks;
     }
+
+    // If no tasks exist, create default tasks
+    const today = new Date();
+    const formattedDate = `${today.getFullYear()}-${String(
+      today.getMonth() + 1
+    ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+    const defaultTasks: Task[] = [
+      {
+        id: crypto.randomUUID(),
+        featureName: "User Registration",
+        description:
+          "Allow new users to create an account with email, password, and profile information. The registration process includes email verification and password strength validation.",
+        status: TaskStatus.DONE,
+        date: formattedDate,
+        createdAt: new Date().toISOString(),
+        order: 0,
+        priority: TaskPriority.HIGH,
+        estimatedHours: 4,
+        estimatedMinutes: 30,
+      },
+      {
+        id: crypto.randomUUID(),
+        featureName: "Google Map Integration",
+        description:
+          "Add google map in nextjs app, add marker, add catchment, draw polygon",
+        status: TaskStatus.DONE,
+        date: formattedDate,
+        createdAt: new Date().toISOString(),
+        order: 1,
+        priority: TaskPriority.MEDIUM,
+        estimatedHours: 6,
+        estimatedMinutes: 0,
+      },
+      {
+        id: crypto.randomUUID(),
+        featureName: "AI Test Case Generation",
+        description:
+          "Implement AI-powered test case generation using Gemini API for automated test scenario creation",
+        status: TaskStatus.IN_PROGRESS,
+        date: formattedDate,
+        createdAt: new Date().toISOString(),
+        order: 2,
+        priority: TaskPriority.HIGH,
+        estimatedHours: 8,
+        estimatedMinutes: 0,
+      },
+      {
+        id: crypto.randomUUID(),
+        featureName: "Password Reset Feature",
+        description:
+          "Implement secure password reset functionality with email verification, temporary token generation, and password strength validation. Include rate limiting and security measures.",
+        status: TaskStatus.IN_PROGRESS,
+        date: formattedDate,
+        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        order: 3,
+        priority: TaskPriority.HIGH,
+        estimatedHours: 3,
+        estimatedMinutes: 0,
+        startedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: crypto.randomUUID(),
+        featureName: "User Profile Page",
+        description:
+          "Create a comprehensive user profile page with avatar upload, personal information management, activity history, and settings. Include responsive design and real-time updates.",
+        status: TaskStatus.UNTOUCHED,
+        date: formattedDate,
+        createdAt: new Date().toISOString(),
+        order: 4,
+        priority: TaskPriority.MEDIUM,
+        estimatedHours: 5,
+        estimatedMinutes: 0,
+      },
+    ];
+
+    // Save default tasks
+    saveTasks(defaultTasks);
+    return defaultTasks;
   } catch (error) {
     console.error("Error loading tasks:", error);
   }

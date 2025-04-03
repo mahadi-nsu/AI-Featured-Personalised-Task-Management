@@ -15,6 +15,30 @@ A modern, feature-rich task management application built with Next.js and TypeSc
 - 🔔 Sound notifications for tasks nearing completion
 - 🔕 Mutable notifications with visual indicator
 
+### AI-Powered Test Case Generation
+
+- 🤖 Integration with Google's Gemini AI API
+- 📝 Automatic test case generation from task descriptions
+- 🎯 Comprehensive test scenarios including:
+  - Positive test cases (Happy paths)
+  - Negative test cases (Error handling)
+  - Validation test cases
+  - Edge cases
+  - Security considerations
+- 🔄 Real-time test status tracking:
+  - Pass/Fail indicators
+  - Inappropriate test marking
+  - Visual status badges
+- 📊 Structured test case format:
+  - Unique test IDs
+  - Detailed descriptions
+  - Input data specifications
+  - Expected results
+- 🔗 Backend service built with Go:
+  - RESTful API endpoints
+  - Efficient request handling
+  - Secure API integration
+
 ### User Interface
 
 - 📱 Responsive design for all screen sizes
@@ -45,6 +69,14 @@ A modern, feature-rich task management application built with Next.js and TypeSc
 - **TypeScript** - Type-safe JavaScript
 - **React** - UI library
 - **Tailwind CSS** - Utility-first CSS framework
+
+### Backend Services
+
+- **[Gemini AI Integration](https://github.com/mahadi-nsu/Gemini-Ai-Integration-golang)** - Go-based backend service for AI-powered test case generation
+  - RESTful API endpoints
+  - Google's Gemini AI integration
+  - Efficient request handling
+  - Secure API communication
 
 ### UI Components and Styling
 
