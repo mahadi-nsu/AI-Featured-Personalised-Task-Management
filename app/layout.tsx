@@ -44,11 +44,13 @@ export default function RootLayout({
                   </span>
                   <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm"></div>
                 </Link>
-                <Link href="/debug" className="hover:text-gray-300">
-                  Debug
-                </Link>
+
                 <Link href="/analytics" className="hover:text-gray-300">
                   Analytics
+                </Link>
+
+                <Link href="/debug" className="hover:text-gray-300">
+                  Backend/Localstorage
                 </Link>
                 <ThemeToggle />
               </div>
