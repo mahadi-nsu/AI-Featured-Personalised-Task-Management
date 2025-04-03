@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/popover";
 import { useState, ReactNode } from "react";
 import { TestCases } from "../components/test-cases";
+import { toast } from "sonner";
 
 interface CardProps {
   title: string;
@@ -40,6 +41,10 @@ export default function AITestingPage() {
     taskId: string
   ) => {
     setIsLoading(true);
+    toast.info("Generating test cases", {
+      description: `Starting test case generation for "${featureName}"...`,
+    });
+
     try {
       const response = await fetch(
         "https://gemini-ai-integration-golang.onrender.com/generate-test-cases",
@@ -62,8 +67,15 @@ export default function AITestingPage() {
       const data = await response.json();
       setTestCases(data.scenarios);
       setLoadedTaskId(taskId);
+      toast.success("Test cases generated", {
+        description: `Successfully generated ${data.scenarios.length} test cases for "${featureName}".`,
+      });
     } catch (error) {
       console.error("Error generating test cases:", error);
+      toast.error("Failed to generate test cases", {
+        description:
+          "There was an error generating the test cases. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
