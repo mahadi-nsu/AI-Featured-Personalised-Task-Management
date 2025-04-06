@@ -64,13 +64,17 @@ export const loadTasks = (): Task[] => {
       return migratedTasks;
     }
 
-    // If no tasks exist or tasks array is empty, create default tasks
-    if (!savedTasks || tasks.length === 0) {
-      const today = new Date();
-      const formattedDate = `${today.getFullYear()}-${String(
-        today.getMonth() + 1
-      ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    // Get today's date
+    const today = new Date();
+    const formattedDate = `${today.getFullYear()}-${String(
+      today.getMonth() + 1
+    ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
+    // Check if there are any tasks for today
+    const hasTasksForToday = tasks.some((task) => task.date === formattedDate);
+
+    // If no tasks exist or no tasks for today, create default tasks
+    if (!savedTasks || tasks.length === 0 || !hasTasksForToday) {
       const defaultTasks: Task[] = [
         {
           id: crypto.randomUUID(),
@@ -140,7 +144,14 @@ export const loadTasks = (): Task[] => {
         },
       ];
 
-      // Save default tasks
+      // If we have existing tasks but none for today, append today's default tasks
+      if (tasks.length > 0 && !hasTasksForToday) {
+        const updatedTasks = [...tasks, ...defaultTasks];
+        saveTasks(updatedTasks);
+        return updatedTasks;
+      }
+
+      // If no tasks at all, save and return default tasks
       saveTasks(defaultTasks);
       return defaultTasks;
     }
