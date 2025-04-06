@@ -59,10 +59,10 @@ export function CompletedTasks({
         tasks.map((task) => (
           <Card key={task.id} className="p-4">
             <div className="flex flex-col gap-1">
-              <span className="font-medium text-base text-primary line-through">
+              <span className="font-medium text-base text-primary">
                 {task.featureName}
               </span>
-              <span className="text-sm text-muted-foreground line-through mb-3">
+              <span className="text-sm text-muted-foreground mb-3">
                 {task.description}
               </span>
               <Button
