@@ -1519,42 +1519,46 @@ export function TodaysTasks() {
   return (
     <>
       <div className="w-full mx-auto p-6 space-y-8">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <CalendarClock className="h-4 w-4 mr-1" />
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center text-sm relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/10 rounded-full blur-sm group-hover:from-primary/30 group-hover:to-primary/20 transition-all duration-300"></div>
+            <div className="relative flex items-center bg-background/80 backdrop-blur-sm px-4 py-2 rounded-full border border-primary/20 group-hover:border-primary/30 transition-all duration-300">
+              <CalendarClock className="h-4 w-4 mr-2 text-primary group-hover:scale-110 transition-transform duration-200" />
+              <span className="font-medium text-foreground/90">
+                {new Date().toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </span>
+            </div>
           </div>
-          <div className="flex border rounded-md overflow-hidden">
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              className="rounded-none"
-              onClick={() => setViewMode("list")}
-            >
-              <ListTodo className="h-4 w-4 mr-1" />
-              List
-            </Button>
-            <Button
-              variant={viewMode === "kanban" ? "default" : "ghost"}
-              size="sm"
-              className="rounded-none"
-              onClick={() => setViewMode("kanban")}
-            >
-              <Trello className="h-4 w-4 mr-1" />
-              Board
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex justify-end mb-4">
-          <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary to-primary/50 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
-            <CreateTaskModal onTaskCreated={setTasks} />
+          <div className="flex items-center gap-4">
+            <div className="flex border rounded-md overflow-hidden">
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="sm"
+                className="rounded-none"
+                onClick={() => setViewMode("list")}
+              >
+                <ListTodo className="h-4 w-4 mr-1" />
+                List
+              </Button>
+              <Button
+                variant={viewMode === "kanban" ? "default" : "ghost"}
+                size="sm"
+                className="rounded-none"
+                onClick={() => setViewMode("kanban")}
+              >
+                <Trello className="h-4 w-4 mr-1" />
+                Board
+              </Button>
+            </div>
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary to-primary/50 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
+              <CreateTaskModal onTaskCreated={setTasks} />
+            </div>
           </div>
         </div>
 
