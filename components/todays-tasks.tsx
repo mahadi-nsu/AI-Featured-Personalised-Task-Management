@@ -76,6 +76,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 // View modes
 type ViewMode = "list" | "kanban";
@@ -331,13 +332,12 @@ function SortableTaskItem({
               <span className="font-medium text-base text-primary truncate">
                 {task.featureName}
               </span>
-              <span
+              <div
                 className={`text-sm text-muted-foreground ${
                   task.status === TaskStatus.DONE ? "line-through" : ""
                 }`}
-              >
-                {task.description}
-              </span>
+                dangerouslySetInnerHTML={{ __html: task.description }}
+              />
               <div className="flex flex-wrap gap-2 mt-1">
                 {task.priority && (
                   <span
@@ -462,13 +462,7 @@ function SortableTaskItem({
               placeholder="Edit feature/bug name..."
               className="w-full"
             />
-            <Textarea
-              value={editedDescription}
-              onChange={(e) => setEditedDescription(e.target.value)}
-              placeholder="Edit description..."
-              className="w-full min-h-[100px]"
-            />
-            <div className="space-y-2">
+            <div className="flex flex-col gap-4">
               <label className="text-sm font-medium flex items-center">
                 <Tag className="h-4 w-4 mr-1" />
                 Priority
@@ -818,13 +812,12 @@ function KanbanTaskItem({
                 <span className="font-medium text-base text-primary block mb-1">
                   {task.featureName}
                 </span>
-                <span
+                <div
                   className={`text-sm text-muted-foreground block ${
                     task.status === TaskStatus.DONE ? "line-through" : ""
                   }`}
-                >
-                  {task.description}
-                </span>
+                  dangerouslySetInnerHTML={{ __html: task.description }}
+                />
                 <div className="flex flex-wrap gap-2 mt-1">
                   {task.priority && (
                     <span
@@ -950,13 +943,7 @@ function KanbanTaskItem({
               placeholder="Edit feature/bug name..."
               className="w-full"
             />
-            <Textarea
-              value={editedDescription}
-              onChange={(e) => setEditedDescription(e.target.value)}
-              placeholder="Edit description..."
-              className="w-full min-h-[100px]"
-            />
-            <div className="space-y-2">
+            <div className="flex flex-col gap-4">
               <label className="text-sm font-medium flex items-center">
                 <Tag className="h-4 w-4 mr-1" />
                 Priority
@@ -1166,13 +1153,12 @@ function DraggedTaskItem({ task }: { task: Task }) {
             <span className="font-medium text-base text-primary">
               {task.featureName}
             </span>
-            <span
+            <div
               className={`text-sm text-muted-foreground ${
                 task.status === TaskStatus.DONE ? "line-through" : ""
               }`}
-            >
-              {task.description}
-            </span>
+              dangerouslySetInnerHTML={{ __html: task.description }}
+            />
             <div className="flex flex-wrap gap-2">
               {task.priority && (
                 <span
@@ -1206,9 +1192,9 @@ export function TodaysTasks() {
   const [priority, setPriority] = useState<TaskPriority | undefined>(undefined);
   const [estimatedHours, setEstimatedHours] = useState<number>(0);
   const [estimatedMinutes, setEstimatedMinutes] = useState<number>(0);
+  const [description, setDescription] = useState("");
   const { register, handleSubmit, reset } = useForm<{
     featureName: string;
-    description: string;
   }>();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
@@ -1304,7 +1290,7 @@ export function TodaysTasks() {
     (task) => task.status === TaskStatus.DONE
   );
 
-  const createTask = (data: { featureName: string; description: string }) => {
+  const createTask = (data: { featureName: string }) => {
     const today = new Date();
     const formattedDate = `${today.getFullYear()}-${String(
       today.getMonth() + 1
@@ -1313,7 +1299,7 @@ export function TodaysTasks() {
     const newTask: Task = {
       id: crypto.randomUUID(),
       featureName: data.featureName,
-      description: data.description,
+      description: description,
       status: TaskStatus.UNTOUCHED,
       date: formattedDate,
       createdAt: new Date().toISOString(),
@@ -1332,6 +1318,7 @@ export function TodaysTasks() {
 
     // Reset form
     reset();
+    setDescription("");
     setPriority(undefined);
     setEstimatedHours(0);
     setEstimatedMinutes(0);
@@ -1564,6 +1551,7 @@ export function TodaysTasks() {
         </div>
 
         <Card className="p-6 shadow-sm">
+          {/* task create form */}
           <form onSubmit={handleSubmit(createTask)} className="space-y-4">
             <div className="flex flex-col gap-4">
               <Input
@@ -1572,11 +1560,13 @@ export function TodaysTasks() {
                 className="flex-1"
               />
               <div className="flex items-center gap-4">
-                <Textarea
-                  placeholder="Feature/Bug Description..."
-                  {...register("description", { required: true })}
-                  className="flex-1 min-h-[100px]"
-                />
+                <div className="flex-1">
+                  <RichTextEditor
+                    value={description}
+                    onChange={(value) => setDescription(value)}
+                    placeholder="Feature/Bug Description..."
+                  />
+                </div>
                 <Button type="submit" size="icon">
                   <Plus className="h-4 w-4" />
                 </Button>
