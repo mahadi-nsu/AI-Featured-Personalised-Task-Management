@@ -12,7 +12,7 @@ import { RichTextEditor } from "./ui/rich-text-editor";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Task, TaskPriority, TaskStatus } from "@/lib/utils";
-import { Tag, Clock } from "lucide-react";
+import { Plus, Tag, Clock } from "lucide-react";
 import { addTask } from "@/lib/taskStorage";
 import { toast } from "sonner";
 
@@ -78,7 +78,15 @@ export function CreateTaskModal({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="default">Create Task</Button>
+        <Button
+          variant="default"
+          className="relative overflow-hidden transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg"
+        >
+          <span className="relative z-10 flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Create Task
+          </span>
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>

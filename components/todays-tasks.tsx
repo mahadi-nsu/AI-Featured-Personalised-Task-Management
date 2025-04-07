@@ -1552,7 +1552,10 @@ export function TodaysTasks() {
         </div>
 
         <div className="flex justify-end mb-4">
-          <CreateTaskModal onTaskCreated={setTasks} />
+          <div className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary to-primary/50 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
+            <CreateTaskModal onTaskCreated={setTasks} />
+          </div>
         </div>
 
         <Card className="p-4 shadow-sm bg-blue-50/50 dark:bg-blue-950/50 border-blue-100 dark:border-blue-900">
