@@ -76,6 +76,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
+import { CreateTaskModal } from "@/components/create-task-modal";
 
 // Date Tasks Component
 // This component manages tasks for specific dates with drag and drop functionality.
@@ -806,6 +807,10 @@ export function DateTasks() {
               </PopoverContent>
             </Popover>
           </div>
+        </div>
+
+        <div className="flex justify-end mb-4">
+          <CreateTaskModal selectedDate={date} onTaskCreated={setTasks} />
         </div>
 
         <Card className="p-6 shadow-sm">

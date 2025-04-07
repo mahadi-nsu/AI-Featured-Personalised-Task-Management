@@ -77,6 +77,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { CreateTaskModal } from "@/components/create-task-modal";
 
 // View modes
 type ViewMode = "list" | "kanban";
@@ -1550,131 +1551,10 @@ export function TodaysTasks() {
           </div>
         </div>
 
-        <Card className="p-6 shadow-sm">
-          {/* task create form */}
-          <form onSubmit={handleSubmit(createTask)} className="space-y-4">
-            <div className="flex flex-col gap-4">
-              <Input
-                placeholder="Feature/Bug Name..."
-                {...register("featureName", { required: true })}
-                className="flex-1"
-              />
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <RichTextEditor
-                    value={description}
-                    onChange={(value) => setDescription(value)}
-                    placeholder="Feature/Bug Description..."
-                  />
-                </div>
-                <Button type="submit" size="icon">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <span className="text-sm text-muted-foreground flex items-center">
-                  <Tag className="h-4 w-4 mr-1" />
-                  Priority:
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={
-                      priority === TaskPriority.HIGH ? "default" : "outline"
-                    }
-                    className={
-                      priority === TaskPriority.HIGH
-                        ? "bg-red-500 hover:bg-red-600"
-                        : ""
-                    }
-                    onClick={() => setPriority(TaskPriority.HIGH)}
-                  >
-                    High
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={
-                      priority === TaskPriority.MEDIUM ? "default" : "outline"
-                    }
-                    className={
-                      priority === TaskPriority.MEDIUM
-                        ? "bg-yellow-500 hover:bg-yellow-600"
-                        : ""
-                    }
-                    onClick={() => setPriority(TaskPriority.MEDIUM)}
-                  >
-                    Medium
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={
-                      priority === TaskPriority.LOW ? "default" : "outline"
-                    }
-                    className={
-                      priority === TaskPriority.LOW
-                        ? "bg-green-500 hover:bg-green-600"
-                        : ""
-                    }
-                    onClick={() => setPriority(TaskPriority.LOW)}
-                  >
-                    Low
-                  </Button>
-                  {priority && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setPriority(undefined)}
-                    >
-                      Clear
-                    </Button>
-                  )}
-                </div>
-              </div>
+        <div className="flex justify-end mb-4">
+          <CreateTaskModal onTaskCreated={setTasks} />
+        </div>
 
-              <div className="space-y-2">
-                <span className="text-sm text-muted-foreground flex items-center">
-                  <Clock className="h-4 w-4 mr-1" />
-                  Estimated Time:
-                </span>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      min="0"
-                      value={estimatedHours}
-                      onChange={(e) =>
-                        setEstimatedHours(parseInt(e.target.value) || 0)
-                      }
-                      className="w-20"
-                    />
-                    <span className="text-sm whitespace-nowrap">hours</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      min="0"
-                      max="59"
-                      value={estimatedMinutes}
-                      onChange={(e) =>
-                        setEstimatedMinutes(parseInt(e.target.value) || 0)
-                      }
-                      className="w-20"
-                    />
-                    <span className="text-sm whitespace-nowrap">minutes</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </form>
-        </Card>
-
-        {/* Search and Filter Section */}
         <Card className="p-4 shadow-sm bg-blue-50/50 dark:bg-blue-950/50 border-blue-100 dark:border-blue-900">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search */}
