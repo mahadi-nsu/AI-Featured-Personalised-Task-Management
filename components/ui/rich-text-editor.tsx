@@ -5,8 +5,17 @@ import OrderedList from "@tiptap/extension-ordered-list";
 import ListItem from "@tiptap/extension-list-item";
 import CodeBlock from "@tiptap/extension-code-block";
 import Blockquote from "@tiptap/extension-blockquote";
+import Placeholder from "@tiptap/extension-placeholder";
+import Highlight from "@tiptap/extension-highlight";
 import { Button } from "./button";
-import { Bold, Italic, List, ListOrdered, Code } from "lucide-react";
+import {
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
+  Code,
+  Highlighter,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RichTextEditorProps {
@@ -46,12 +55,22 @@ export function RichTextEditor({
           class: "border-l-4 border-muted-foreground pl-4",
         },
       }),
+      Placeholder.configure({
+        placeholder,
+        emptyEditorClass: "is-editor-empty",
+      }),
+      Highlight.configure({
+        multicolor: false,
+        HTMLAttributes: {
+          class: "bg-yellow-200 dark:bg-yellow-800",
+        },
+      }),
     ],
     content: value,
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm dark:prose-invert focus:outline-none min-h-[100px]",
+          "prose prose-sm dark:prose-invert focus:outline-none min-h-[100px] relative",
       },
     },
     onUpdate: ({ editor }) => {
@@ -119,8 +138,31 @@ export function RichTextEditor({
         >
           <Code className="h-4 w-4" />
         </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleHighlight().run()}
+          className={cn(editor.isActive("highlight") && "bg-muted")}
+        >
+          <Highlighter className="h-4 w-4" />
+        </Button>
       </div>
-      <EditorContent editor={editor} className="p-4" />
+      <div className="relative">
+        <EditorContent editor={editor} className="p-4" />
+        <style jsx global>{`
+          .is-editor-empty:first-child::before {
+            color: #adb5bd;
+            content: attr(data-placeholder);
+            float: left;
+            height: 0;
+            pointer-events: none;
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+          }
+        `}</style>
+      </div>
     </div>
   );
 }
