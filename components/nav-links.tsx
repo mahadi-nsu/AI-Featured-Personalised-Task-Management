@@ -66,6 +66,17 @@ export function NavLinks() {
         </Link>
 
         <Link
+          href="/routines"
+          className={`hover:text-gray-300 transition-colors ${
+            pathname === "/routines"
+              ? "text-white font-bold border-b-2 border-white"
+              : "text-gray-400"
+          }`}
+        >
+          Routines
+        </Link>
+
+        <Link
           href="/debug"
           className={`hover:text-gray-300 transition-colors ${
             pathname === "/debug"
@@ -122,6 +133,18 @@ export function NavLinks() {
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Analytics
+          </Link>
+
+          <Link
+            href="/routines"
+            className={`text-2xl hover:text-gray-300 transition-colors ${
+              pathname === "/routines"
+                ? "text-white font-bold border-b-2 border-white"
+                : "text-gray-400"
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Routines
           </Link>
 
           <Link
