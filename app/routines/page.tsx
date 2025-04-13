@@ -13,18 +13,37 @@ import {
 import { dummyRoutines, type Routine } from "./dummy-data";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function RoutinesPage() {
   const [routines, setRoutines] = useState<Routine[]>(dummyRoutines);
+  const [selectedRoutine, setSelectedRoutine] = useState<Routine | null>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
-  const handleSetActive = (routineId: string) => {
-    setRoutines((prevRoutines) =>
-      prevRoutines.map((routine) => ({
-        ...routine,
-        isActive: routine.id === routineId,
-      }))
-    );
-    toast.success("Routine activated successfully");
+  const handleSetActive = (routine: Routine) => {
+    setSelectedRoutine(routine);
+    setIsConfirmModalOpen(true);
+  };
+
+  const confirmSetActive = () => {
+    if (selectedRoutine) {
+      setRoutines((prevRoutines) =>
+        prevRoutines.map((routine) => ({
+          ...routine,
+          isActive: routine.id === selectedRoutine.id,
+        }))
+      );
+      toast.success(`${selectedRoutine.name} is now your active routine`);
+    }
+    setIsConfirmModalOpen(false);
+    setSelectedRoutine(null);
   };
 
   return (
@@ -97,8 +116,8 @@ export default function RoutinesPage() {
             .map((template) => (
               <Card
                 key={template.id}
-                className="min-w-[300px] cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => handleSetActive(template.id)}
+                className="min-w-[300px] cursor-pointer hover:border-purple-500/50 transition-colors bg-purple-50/50 dark:bg-purple-950/20"
+                onClick={() => handleSetActive(template)}
               >
                 <CardHeader>
                   <CardTitle>{template.name}</CardTitle>
@@ -140,8 +159,8 @@ export default function RoutinesPage() {
             .map((routine) => (
               <Card
                 key={routine.id}
-                className="min-w-[300px] cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => handleSetActive(routine.id)}
+                className="min-w-[300px] cursor-pointer hover:border-blue-500/50 transition-colors bg-blue-50/50 dark:bg-blue-950/20"
+                onClick={() => handleSetActive(routine)}
               >
                 <CardHeader>
                   <CardTitle>{routine.name}</CardTitle>
@@ -173,6 +192,28 @@ export default function RoutinesPage() {
             ))}
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set Active Routine</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to set "{selectedRoutine?.name}" as your
+              active routine? This will replace your current active routine.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsConfirmModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={confirmSetActive}>Set as Active</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
