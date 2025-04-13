@@ -77,6 +77,17 @@ export function NavLinks() {
         </Link>
 
         <Link
+          href="/job-hunt"
+          className={`hover:text-gray-300 transition-colors ${
+            pathname === "/job-hunt"
+              ? "text-white font-bold border-b-2 border-white"
+              : "text-gray-400"
+          }`}
+        >
+          Job-hunt
+        </Link>
+
+        <Link
           href="/debug"
           className={`hover:text-gray-300 transition-colors ${
             pathname === "/debug"

@@ -4,43 +4,50 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Task, TaskStatus } from "@/lib/utils";
 import { loadTasks } from "@/lib/taskStorage";
-import { Tag, Clock } from "lucide-react";
+import { Tag, Clock, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-export function CompletedTasks() {
+interface CompletedTasksProps {
+  selectedDate?: Date;
+  onGenerateTest: (
+    featureName: string,
+    description: string,
+    taskId: string
+  ) => void;
+  loadedTaskId: string | null;
+  isLoading: boolean;
+}
+
+export function CompletedTasks({
+  selectedDate,
+  onGenerateTest,
+  loadedTaskId,
+  isLoading,
+}: CompletedTasksProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  // Load tasks on component mount
   useEffect(() => {
     const loadedTasks = loadTasks();
-    // Filter only completed tasks
-    const completedTasks = loadedTasks.filter(
-      (task) => task.status === TaskStatus.DONE
-    );
+    const completedTasks = loadedTasks.filter((task) => {
+      // First filter for completed tasks
+      if (task.status !== TaskStatus.DONE) return false;
+
+      // If selectedDate is provided, filter by date
+      if (selectedDate && task.date) {
+        const taskDate = new Date(task.date);
+        return (
+          taskDate.getDate() === selectedDate.getDate() &&
+          taskDate.getMonth() === selectedDate.getMonth() &&
+          taskDate.getFullYear() === selectedDate.getFullYear()
+        );
+      }
+
+      // If no selectedDate, show all completed tasks
+      return true;
+    });
     setTasks(completedTasks);
-  }, []);
-
-  // Get priority badge color
-  const getPriorityColor = (priority?: string) => {
-    switch (priority) {
-      case "HIGH":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "MEDIUM":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "LOW":
-        return "bg-green-100 text-green-800 border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  // Format estimated time display
-  const getEstimatedTimeDisplay = (task: Task) => {
-    if (!task.estimatedHours && !task.estimatedMinutes) return null;
-    const parts = [];
-    if (task.estimatedHours) parts.push(`${task.estimatedHours}h`);
-    if (task.estimatedMinutes) parts.push(`${task.estimatedMinutes}m`);
-    return parts.join(" ");
-  };
+  }, [selectedDate]);
 
   return (
     <div className="space-y-2">
@@ -55,27 +62,28 @@ export function CompletedTasks() {
               <span className="font-medium text-base text-primary line-through">
                 {task.featureName}
               </span>
-              <span className="text-sm text-muted-foreground line-through">
+              <span className="text-sm text-muted-foreground line-through mb-3">
                 {task.description}
               </span>
-              <div className="flex flex-wrap gap-2">
-                {task.priority && (
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
-                      task.priority
-                    )}`}
-                  >
-                    <Tag className="h-3 w-3 mr-1" />
-                    {task.priority}
-                  </span>
+              <Button
+                className="w-full"
+                variant={loadedTaskId === task.id ? "default" : "outline"}
+                onClick={() =>
+                  onGenerateTest(task.featureName, task.description, task.id)
+                }
+                disabled={isLoading}
+              >
+                {isLoading && loadedTaskId === task.id ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : loadedTaskId === task.id ? (
+                  "Data Fetched!"
+                ) : (
+                  "Generate AI Test Case"
                 )}
-                {getEstimatedTimeDisplay(task) && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {getEstimatedTimeDisplay(task)}
-                  </span>
-                )}
-              </div>
+              </Button>
             </div>
           </Card>
         ))
