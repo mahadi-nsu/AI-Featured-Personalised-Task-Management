@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import Link from "next/link";
 
 export default function RoutinesPage() {
   const [routines, setRoutines] = useState<Routine[]>([]);
