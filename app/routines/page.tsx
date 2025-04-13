@@ -10,28 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-interface RoutineItem {
-  id: string;
-  activityName: string;
-  description: string;
-  plannedDuration: number; // in minutes
-  category?: string;
-  timeBlock?: "morning" | "afternoon" | "evening";
-  priority: number;
-}
-
-interface Routine {
-  id: string;
-  name: string;
-  createdAt: Date;
-  updatedAt: Date;
-  isTemplate: boolean;
-  items: RoutineItem[];
-}
+import { dummyRoutines, type Routine } from "./dummy-data";
 
 export default function RoutinesPage() {
-  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [routines, setRoutines] = useState<Routine[]>(dummyRoutines);
 
   return (
     <div className="container mx-auto py-8">
@@ -46,6 +28,52 @@ export default function RoutinesPage() {
           <Plus className="mr-2 h-4 w-4" />
           Create New Routine
         </Button>
+      </div>
+
+      {/* Active Routine Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Active Routine</h2>
+        <div className="grid grid-cols-1 gap-4">
+          {routines
+            .filter((routine) => routine.isActive)
+            .map((routine) => (
+              <Card key={routine.id} className="border-2 border-primary">
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>{routine.name}</CardTitle>
+                    <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
+                      Active
+                    </span>
+                  </div>
+                  <CardDescription>
+                    Last updated {routine.updatedAt.toLocaleDateString()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {routine.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex justify-between items-center text-sm p-2 bg-muted/50 rounded-lg"
+                      >
+                        <div>
+                          <span className="font-medium">
+                            {item.activityName}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {item.description}
+                          </p>
+                        </div>
+                        <span className="text-muted-foreground">
+                          {item.plannedDuration} mins
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+        </div>
       </div>
 
       {/* Templates Section */}
@@ -87,12 +115,12 @@ export default function RoutinesPage() {
         </div>
       </div>
 
-      {/* Active Routines Section */}
+      {/* Other Routines Section */}
       <div>
         <h2 className="text-xl font-semibold mb-4">My Routines</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {routines
-            .filter((routine) => !routine.isTemplate)
+            .filter((routine) => !routine.isTemplate && !routine.isActive)
             .map((routine) => (
               <Card key={routine.id}>
                 <CardHeader>
