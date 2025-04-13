@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Check } from "lucide-react";
 import { useState } from "react";
 import {
   Card,
@@ -11,9 +11,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { dummyRoutines, type Routine } from "./dummy-data";
+import { toast } from "sonner";
+import { format } from "date-fns";
 
 export default function RoutinesPage() {
   const [routines, setRoutines] = useState<Routine[]>(dummyRoutines);
+
+  const handleSetActive = (routineId: string) => {
+    setRoutines((prevRoutines) =>
+      prevRoutines.map((routine) => ({
+        ...routine,
+        isActive: routine.id === routineId,
+      }))
+    );
+    toast.success("Routine activated successfully");
+  };
 
   return (
     <div className="container mx-auto py-8">
@@ -46,7 +58,7 @@ export default function RoutinesPage() {
                     </span>
                   </div>
                   <CardDescription>
-                    Last updated {routine.updatedAt.toLocaleDateString()}
+                    Last updated {format(routine.updatedAt, "MMM d, yyyy")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -79,15 +91,19 @@ export default function RoutinesPage() {
       {/* Templates Section */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Templates</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex overflow-x-auto gap-4 pb-4">
           {routines
             .filter((routine) => routine.isTemplate)
             .map((template) => (
-              <Card key={template.id}>
+              <Card
+                key={template.id}
+                className="min-w-[300px] cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => handleSetActive(template.id)}
+              >
                 <CardHeader>
                   <CardTitle>{template.name}</CardTitle>
                   <CardDescription>
-                    Created on {template.createdAt.toLocaleDateString()}
+                    Created on {format(template.createdAt, "MMM d, yyyy")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -118,15 +134,19 @@ export default function RoutinesPage() {
       {/* Other Routines Section */}
       <div>
         <h2 className="text-xl font-semibold mb-4">My Routines</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex overflow-x-auto gap-4 pb-4">
           {routines
             .filter((routine) => !routine.isTemplate && !routine.isActive)
             .map((routine) => (
-              <Card key={routine.id}>
+              <Card
+                key={routine.id}
+                className="min-w-[300px] cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => handleSetActive(routine.id)}
+              >
                 <CardHeader>
                   <CardTitle>{routine.name}</CardTitle>
                   <CardDescription>
-                    Last updated {routine.updatedAt.toLocaleDateString()}
+                    Last updated {format(routine.updatedAt, "MMM d, yyyy")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
