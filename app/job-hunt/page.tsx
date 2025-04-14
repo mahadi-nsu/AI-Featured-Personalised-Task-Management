@@ -10,8 +10,9 @@ import {
 } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Calendar, ExternalLink } from "lucide-react";
+import { Building2, Calendar, ExternalLink, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface JobApplication {
   id: string;
@@ -96,6 +97,7 @@ const getSourceColor = (source: JobApplication["source"]) => {
 
 export default function JobHuntPage() {
   const [applications, setApplications] = useState<JobApplication[]>([]);
+  const [isAddingNew, setIsAddingNew] = useState(false);
 
   useEffect(() => {
     const savedApplications = localStorage.getItem("jobApplications");
@@ -110,6 +112,10 @@ export default function JobHuntPage() {
     }
   }, []);
 
+  const handleAddNew = () => {
+    setIsAddingNew(true);
+  };
+
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
@@ -121,6 +127,13 @@ export default function JobHuntPage() {
             Track and manage your job applications
           </p>
         </div>
+        <Button
+          onClick={handleAddNew}
+          className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Application
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
