@@ -2,8 +2,23 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 export const createClient = () => {
-  const cookieStore = cookies();
+  // For static exports, we don't need cookies
+  if (process.env.NEXT_PUBLIC_STATIC_EXPORT) {
+    return createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get: () => "",
+          set: () => {},
+          remove: () => {},
+        },
+      }
+    );
+  }
 
+  // For normal server-side rendering
+  const cookieStore = cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
