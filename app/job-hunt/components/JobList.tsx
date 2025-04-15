@@ -6,7 +6,6 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Calendar, ExternalLink, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
-import AddJobButton from "./AddJobButton";
 
 export interface JobApplication {
   id: string;
@@ -53,81 +52,71 @@ const getSourceColor = (source: JobApplication["source"]) => {
 };
 
 export default function JobList({ initialApplications }: JobListProps) {
-  const [applications, setApplications] =
-    useState<JobApplication[]>(initialApplications);
-
-  const handleJobAdded = (newJob: JobApplication) => {
-    setApplications((prev) => [newJob, ...prev]);
-  };
+  const [applications] = useState<JobApplication[]>(initialApplications);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-end">
-        <AddJobButton onJobAdded={handleJobAdded} />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {applications.map((job) => (
-          <Card
-            key={job.id}
-            className="group overflow-hidden transition-all duration-300 hover:shadow-lg dark:hover:shadow-purple-500/10 hover:shadow-purple-500/20 border-slate-200/50 dark:border-slate-800/50"
-          >
-            <CardHeader className="bg-gradient-to-r from-slate-50/50 to-purple-50/20 dark:from-slate-950/50 dark:to-purple-950/20 border-b relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="flex justify-between items-start relative z-10">
-                <div className="flex items-start gap-3">
-                  <div className="mt-1">
-                    <Building2 className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </div>
-                  <div className="space-y-1">
-                    <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                      {job.companyName}
-                    </CardTitle>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        Applied on {format(new Date(job.applyDate), "PPP")}
-                      </span>
-                    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {applications.map((job) => (
+        <Card
+          key={job.id}
+          className="group overflow-hidden transition-all duration-300 hover:shadow-lg dark:hover:shadow-purple-500/10 hover:shadow-purple-500/20 border-slate-200/50 dark:border-slate-800/50"
+        >
+          <CardHeader className="bg-gradient-to-r from-slate-50/50 to-purple-50/20 dark:from-slate-950/50 dark:to-purple-950/20 border-b relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="flex justify-between items-start relative z-10">
+              <div className="flex items-start gap-3">
+                <div className="mt-1">
+                  <Building2 className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+                <div className="space-y-1">
+                  <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                    {job.companyName}
+                  </CardTitle>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span>
+                      Applied on {format(new Date(job.applyDate), "PPP")}
+                    </span>
                   </div>
                 </div>
-                <a
-                  href={job.jobPostUrl || "#"}
-                  target={job.jobPostUrl ? "_blank" : "_self"}
-                  rel={job.jobPostUrl ? "noopener noreferrer" : undefined}
-                  className="flex items-center space-x-1"
-                >
-                  <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                </a>
               </div>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-4 relative group-hover:bg-slate-50/50 dark:group-hover:bg-slate-950/50 transition-colors">
-              <p className="text-sm text-muted-foreground line-clamp-2 group-hover:text-foreground transition-colors">
-                {job.jobSummary}
-              </p>
-              <div className="flex gap-2">
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    getSourceColor(job.source),
-                    "transition-all duration-300 group-hover:border-opacity-50"
-                  )}
-                >
-                  {job.source}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    getStatusColor(job.status),
-                    "transition-all duration-300 group-hover:border-opacity-50"
-                  )}
-                >
-                  {job.status}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              <a
+                href={job.jobPostUrl || "#"}
+                target={job.jobPostUrl ? "_blank" : "_self"}
+                rel={job.jobPostUrl ? "noopener noreferrer" : undefined}
+                className="flex items-center space-x-1"
+              >
+                <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </a>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4 relative group-hover:bg-slate-50/50 dark:group-hover:bg-slate-950/50 transition-colors">
+            <p className="text-sm text-muted-foreground line-clamp-2 group-hover:text-foreground transition-colors">
+              {job.jobSummary}
+            </p>
+            <div className="flex gap-2">
+              <Badge
+                variant="outline"
+                className={cn(
+                  getSourceColor(job.source),
+                  "transition-all duration-300 group-hover:border-opacity-50"
+                )}
+              >
+                {job.source}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={cn(
+                  getStatusColor(job.status),
+                  "transition-all duration-300 group-hover:border-opacity-50"
+                )}
+              >
+                {job.status}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }
