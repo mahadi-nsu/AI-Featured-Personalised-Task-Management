@@ -36,13 +36,13 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
     try {
       const newJob: Omit<JobApplication, "id"> = {
         companyName,
-        jobTitle,
+        // jobTitle,
         jobSummary,
-        location,
+        // location,
         jobPostUrl,
         status,
         source,
-        applyDate: new Date().toISOString(),
+        applyDate: new Date().toISOString().split("T")[0],
       };
 
       const { data, error } = await supabase

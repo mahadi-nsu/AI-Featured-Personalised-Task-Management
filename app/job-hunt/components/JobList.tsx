@@ -10,12 +10,12 @@ import { cn } from "@/lib/utils";
 export interface JobApplication {
   id: string;
   companyName: string;
-  jobTitle: string;
+  jobTitle?: string;
   jobSummary: string;
   applyDate: string;
   status: string;
   source: string;
-  location: string;
+  location?: string;
   jobPostUrl: string;
 }
 
