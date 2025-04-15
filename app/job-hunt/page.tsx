@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Building2, Calendar, ExternalLink, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 
 interface JobApplication {
   id: string;
@@ -110,6 +111,35 @@ export default function JobHuntPage() {
         JSON.stringify(dummyApplications)
       );
     }
+
+    async function fetchSupabaseData() {
+      try {
+        console.log("Fetching from Supabase...");
+        const supabase = createClient();
+        console.log("Supabase client created:", supabase);
+
+        console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+
+        const { data, error } = await supabase.from("applied_jobs").select("*");
+
+        console.log("Raw Supabase response:", { data, error });
+
+        if (error) {
+          console.error("Supabase error:", error);
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          console.log("No data found in applied_jobs table");
+        } else {
+          console.log("Found", data.length, "records:", data);
+        }
+      } catch (err) {
+        console.error("Error fetching from Supabase:", err);
+      }
+    }
+
+    fetchSupabaseData();
   }, []);
 
   const handleAddNew = () => {
@@ -138,7 +168,7 @@ export default function JobHuntPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {applications.map((job) => {
-          console.log("job", job);
+          // console.log("job", job);
           return (
             <Card
               key={job.id}
