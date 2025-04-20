@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -52,11 +51,9 @@ const getSourceColor = (source: JobApplication["source"]) => {
 };
 
 export default function JobList({ initialApplications }: JobListProps) {
-  const [applications] = useState<JobApplication[]>(initialApplications);
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {applications.map((job) => (
+      {initialApplications.map((job) => (
         <Card
           key={job.id}
           className="group overflow-hidden transition-all duration-300 hover:shadow-lg dark:hover:shadow-purple-500/10 hover:shadow-purple-500/20 border-slate-200/50 dark:border-slate-800/50"
