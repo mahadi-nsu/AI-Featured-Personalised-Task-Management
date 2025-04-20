@@ -18,7 +18,7 @@ import { toast } from "sonner";
 interface AddJobModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onJobAdded?: (job: JobApplication) => void;
+  onJobAdded?: (job: JobApplication | undefined, success: boolean) => void;
 }
 
 export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
@@ -29,10 +29,14 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
   const [jobPostUrl, setJobPostUrl] = useState("");
   const [status, setStatus] = useState("Ongoing");
   const [source, setSource] = useState("LinkedIn");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const supabase = createClientComponentClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     try {
       const newJob: Omit<JobApplication, "id"> = {
         companyName,
@@ -53,7 +57,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
 
       if (error) throw error;
 
-      onJobAdded?.(data);
+      onJobAdded?.(data, true);
       onClose();
       toast.success("Job application added successfully!");
 
@@ -66,8 +70,11 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
       setStatus("Ongoing");
       setSource("LinkedIn");
     } catch (error) {
-      toast.error("Failed to add job application");
       console.error("Error adding job application:", error);
+      toast.error("Failed to add job application");
+      onJobAdded?.(undefined, false);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -88,6 +95,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -98,6 +106,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
                 value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
                 required
+                disabled={isSubmitting}
               />
             </div>
             <div className="grid gap-2">
@@ -116,6 +125,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -128,6 +138,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
                   value={jobPostUrl}
                   onChange={(e) => setJobPostUrl(e.target.value)}
                   type="url"
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -138,6 +149,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
                   className="w-full p-2 border rounded-md"
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
+                  disabled={isSubmitting}
                 >
                   <option value="Ongoing">Ongoing</option>
                   <option value="Rejected">Rejected</option>
@@ -151,6 +163,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
                   className="w-full p-2 border rounded-md"
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
+                  disabled={isSubmitting}
                 >
                   <option value="LinkedIn">LinkedIn</option>
                   <option value="Facebook">Facebook</option>
@@ -160,7 +173,9 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
               </div>
             </div>
             <div className="flex justify-end">
-              <Button type="submit">Add Application</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Adding..." : "Add Application"}
+              </Button>
             </div>
           </div>
         </form>

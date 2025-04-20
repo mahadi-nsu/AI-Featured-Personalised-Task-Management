@@ -4,6 +4,7 @@ import { useState } from "react";
 import JobList from "./JobList";
 import AddJobButton from "./AddJobButton";
 import { JobApplication } from "./JobList";
+import { toast } from "sonner";
 
 interface JobHuntClientProps {
   initialApplications: JobApplication[];
@@ -15,8 +16,15 @@ export default function JobHuntClient({
   const [applications, setApplications] =
     useState<JobApplication[]>(initialApplications);
 
-  const handleJobAdded = (newJob: JobApplication) => {
-    setApplications((prev) => [newJob, ...prev]);
+  const handleJobAdded = (
+    newJob: JobApplication | undefined,
+    success: boolean
+  ) => {
+    if (success && newJob) {
+      setApplications((prev) => [newJob, ...prev]);
+    } else {
+      toast.error("Failed to add job. Please try again.");
+    }
   };
 
   return (

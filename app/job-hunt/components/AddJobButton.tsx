@@ -7,7 +7,7 @@ import { AddJobModal } from "./AddJobModal";
 import { JobApplication } from "./JobList";
 
 interface AddJobButtonProps {
-  onJobAdded?: (job: JobApplication) => void;
+  onJobAdded?: (job: JobApplication | undefined, success: boolean) => void;
 }
 
 export default function AddJobButton({ onJobAdded }: AddJobButtonProps) {
@@ -25,8 +25,8 @@ export default function AddJobButton({ onJobAdded }: AddJobButtonProps) {
       <AddJobModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        onJobAdded={(job) => {
-          onJobAdded?.(job);
+        onJobAdded={(job, success) => {
+          onJobAdded?.(job, success);
           setIsOpen(false);
         }}
       />
