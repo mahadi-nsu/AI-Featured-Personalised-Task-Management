@@ -11,7 +11,13 @@ import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { JobApplication } from "./JobList";
-import { Building2, ExternalLink, MapPin } from "lucide-react";
+import {
+  Building2,
+  ExternalLink,
+  MapPin,
+  Calendar,
+  Upload,
+} from "lucide-react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
 
@@ -29,6 +35,8 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
   const [jobPostUrl, setJobPostUrl] = useState("");
   const [status, setStatus] = useState("Ongoing");
   const [source, setSource] = useState("LinkedIn");
+  const [deadline, setDeadline] = useState("");
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const supabase = createClientComponentClient();
 
@@ -38,15 +46,36 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
 
     setIsSubmitting(true);
     try {
+      let resumeUrl = "";
+
+      // Upload resume if selected
+      if (resumeFile) {
+        const fileExt = resumeFile.name.split(".").pop();
+        const fileName = `${Math.random().toString(36).slice(2)}.${fileExt}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("resumes")
+          .upload(fileName, resumeFile);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("resumes").getPublicUrl(fileName);
+
+        resumeUrl = publicUrl;
+      }
+
       const newJob: Omit<JobApplication, "id"> = {
         companyName,
-        // jobTitle,
         jobSummary,
-        // location,
         jobPostUrl,
         status,
         source,
         applyDate: new Date().toISOString().split("T")[0],
+        deadline: deadline || undefined,
+        resume: resumeUrl || undefined,
       };
 
       const { data, error } = await supabase
@@ -69,12 +98,25 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
       setJobPostUrl("");
       setStatus("Ongoing");
       setSource("LinkedIn");
+      setDeadline("");
+      setResumeFile(null);
     } catch (error) {
       console.error("Error adding job application:", error);
       toast.error("Failed to add job application");
       onJobAdded?.(undefined, false);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.type !== "application/pdf") {
+        toast.error("Please upload a PDF file");
+        return;
+      }
+      setResumeFile(file);
     }
   };
 
@@ -141,6 +183,36 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
                   disabled={isSubmitting}
                 />
               </div>
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="deadline"
+                  placeholder="Application Deadline"
+                  value={deadline}
+                  onChange={(e) => setDeadline(e.target.value)}
+                  type="date"
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-center gap-2">
+                <Upload className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="resume"
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleResumeChange}
+                  disabled={isSubmitting}
+                />
+              </div>
+              {resumeFile && (
+                <p className="text-sm text-muted-foreground">
+                  Selected: {resumeFile.name}
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

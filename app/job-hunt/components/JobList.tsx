@@ -16,6 +16,8 @@ export interface JobApplication {
   source: string;
   location?: string;
   jobPostUrl: string;
+  deadline?: string;
+  resume?: string;
 }
 
 interface JobListProps {
@@ -91,25 +93,44 @@ export default function JobList({ initialApplications }: JobListProps) {
             <p className="text-sm text-muted-foreground line-clamp-2 group-hover:text-foreground transition-colors">
               {job.jobSummary}
             </p>
-            <div className="flex gap-2">
-              <Badge
-                variant="outline"
-                className={cn(
-                  getSourceColor(job.source),
-                  "transition-all duration-300 group-hover:border-opacity-50"
-                )}
-              >
-                {job.source}
-              </Badge>
-              <Badge
-                variant="outline"
-                className={cn(
-                  getStatusColor(job.status),
-                  "transition-all duration-300 group-hover:border-opacity-50"
-                )}
-              >
-                {job.status}
-              </Badge>
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    getSourceColor(job.source),
+                    "transition-all duration-300 group-hover:border-opacity-50"
+                  )}
+                >
+                  {job.source}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    getStatusColor(job.status),
+                    "transition-all duration-300 group-hover:border-opacity-50"
+                  )}
+                >
+                  {job.status}
+                </Badge>
+              </div>
+              {job.deadline && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>Deadline: {format(new Date(job.deadline), "PPP")}</span>
+                </div>
+              )}
+              {job.resume && (
+                <a
+                  href={job.resume}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-blue-500 hover:text-blue-600 transition-colors"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  View Resume
+                </a>
+              )}
             </div>
           </CardContent>
         </Card>
