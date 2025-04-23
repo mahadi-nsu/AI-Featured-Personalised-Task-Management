@@ -18,8 +18,32 @@ import {
   Clock,
   HourglassIcon,
   XCircle,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { toast } from "sonner";
 
 export interface JobApplication {
   id: string;
@@ -147,11 +171,78 @@ const slowPulseKeyframes = `
 const StyleTag = () => <style>{slowPulseKeyframes}</style>;
 
 export default function JobList({ initialApplications }: JobListProps) {
+  const [applications, setApplications] = useState(initialApplications);
+  const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
+  const [deletingJob, setDeletingJob] = useState<JobApplication | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const supabase = createClientComponentClient();
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingJob) return;
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("applied_jobs")
+        .update({
+          company_name: editingJob.companyName,
+          job_title: editingJob.jobTitle,
+          job_summary: editingJob.jobSummary,
+          status: editingJob.status,
+          source: editingJob.source,
+          location: editingJob.location,
+          job_post_url: editingJob.jobPostUrl,
+          deadline: editingJob.deadline,
+          resume: editingJob.resume,
+        })
+        .eq("id", editingJob.id);
+
+      if (error) throw error;
+
+      setApplications((prev) =>
+        prev.map((app) => (app.id === editingJob.id ? editingJob : app))
+      );
+      setEditingJob(null);
+      toast.success("Job application updated successfully!");
+    } catch (error) {
+      toast.error("Failed to update job application");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingJob) return;
+
+    console.log("deletingJob", deletingJob);
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("applied_jobs")
+        .delete()
+        .eq("id", deletingJob.id);
+
+      if (error) throw error;
+
+      setApplications((prev) =>
+        prev.filter((app) => app.id !== deletingJob.id)
+      );
+      setDeletingJob(null);
+      toast.success("Job application deleted successfully!");
+    } catch (error) {
+      toast.error("Failed to delete job application");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <>
       <StyleTag />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {initialApplications.map((job) => (
+        {applications.map((job) => (
           <Card
             key={job.id}
             className={cn(
@@ -180,6 +271,20 @@ export default function JobList({ initialApplications }: JobListProps) {
                   </div>
                 </div>
                 <div className="flex items-center space-x-1 flex-shrink-0 mt-1">
+                  <button
+                    onClick={() => setEditingJob(job)}
+                    className="text-muted-foreground hover:text-primary transition-colors p-1 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
+                    title="Edit Application"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setDeletingJob(job)}
+                    className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
+                    title="Delete Application"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                   {job.resume && (
                     <a
                       href={job.resume}
@@ -320,6 +425,159 @@ export default function JobList({ initialApplications }: JobListProps) {
           </Card>
         ))}
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={editingJob !== null}
+        onOpenChange={() => setEditingJob(null)}
+      >
+        <DialogContent className="sm:max-w-[625px]">
+          <DialogHeader>
+            <DialogTitle>Edit Job Application</DialogTitle>
+          </DialogHeader>
+          {editingJob && (
+            <form onSubmit={handleEdit}>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="companyName"
+                      placeholder="Company Name"
+                      value={editingJob.companyName}
+                      onChange={(e) =>
+                        setEditingJob({
+                          ...editingJob,
+                          companyName: e.target.value,
+                        })
+                      }
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Input
+                    id="jobTitle"
+                    placeholder="Job Title"
+                    value={editingJob.jobTitle}
+                    onChange={(e) =>
+                      setEditingJob({
+                        ...editingJob,
+                        jobTitle: e.target.value,
+                      })
+                    }
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <RichTextEditor
+                    value={editingJob.jobSummary}
+                    onChange={(value) =>
+                      setEditingJob({
+                        ...editingJob,
+                        jobSummary: value,
+                      })
+                    }
+                    placeholder="Job description and requirements..."
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Input
+                    id="location"
+                    placeholder="Location"
+                    value={editingJob.location}
+                    onChange={(e) =>
+                      setEditingJob({
+                        ...editingJob,
+                        location: e.target.value,
+                      })
+                    }
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <span className="text-sm text-muted-foreground">
+                      Status:
+                    </span>
+                    <select
+                      className="w-full p-2 border rounded-md"
+                      value={editingJob.status}
+                      onChange={(e) =>
+                        setEditingJob({
+                          ...editingJob,
+                          status: e.target.value,
+                        })
+                      }
+                      disabled={isSubmitting}
+                    >
+                      <option value="Ongoing">Ongoing</option>
+                      <option value="Rejected">Rejected</option>
+                      <option value="Accepted">Accepted</option>
+                      <option value="No Response">No Response</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <span className="text-sm text-muted-foreground">
+                      Source:
+                    </span>
+                    <select
+                      className="w-full p-2 border rounded-md"
+                      value={editingJob.source}
+                      onChange={(e) =>
+                        setEditingJob({
+                          ...editingJob,
+                          source: e.target.value,
+                        })
+                      }
+                      disabled={isSubmitting}
+                    >
+                      <option value="LinkedIn">LinkedIn</option>
+                      <option value="Facebook">Facebook</option>
+                      <option value="Reference">Reference</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deletingJob !== null}
+        onOpenChange={() => setDeletingJob(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the job
+              application for {deletingJob?.companyName}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
