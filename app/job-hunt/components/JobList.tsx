@@ -20,6 +20,7 @@ import {
   XCircle,
   Pencil,
   Trash2,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -186,13 +187,14 @@ export default function JobList({ initialApplications }: JobListProps) {
       const { error } = await supabase
         .from("applied_jobs")
         .update({
-          company_name: editingJob.companyName,
-          job_title: editingJob.jobTitle,
-          job_summary: editingJob.jobSummary,
+          companyName: editingJob.companyName,
+          // jobTitle: editingJob.jobTitle,
+          jobSummary: editingJob.jobSummary,
           status: editingJob.status,
           source: editingJob.source,
-          location: editingJob.location,
-          job_post_url: editingJob.jobPostUrl,
+          // location: editingJob.location,
+          applyDate: editingJob.applyDate,
+          jobPostUrl: editingJob.jobPostUrl,
           deadline: editingJob.deadline,
           resume: editingJob.resume,
         })
@@ -214,8 +216,6 @@ export default function JobList({ initialApplications }: JobListProps) {
 
   const handleDelete = async () => {
     if (!deletingJob) return;
-
-    console.log("deletingJob", deletingJob);
 
     setIsSubmitting(true);
     try {
@@ -484,19 +484,84 @@ export default function JobList({ initialApplications }: JobListProps) {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Input
-                    id="location"
-                    placeholder="Location"
-                    value={editingJob.location}
-                    onChange={(e) =>
-                      setEditingJob({
-                        ...editingJob,
-                        location: e.target.value,
-                      })
-                    }
-                    required
-                    disabled={isSubmitting}
-                  />
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="location"
+                      placeholder="Location"
+                      value={editingJob.location}
+                      onChange={(e) =>
+                        setEditingJob({
+                          ...editingJob,
+                          location: e.target.value,
+                        })
+                      }
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2">
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="jobPostUrl"
+                      placeholder="Job Post URL"
+                      value={editingJob.jobPostUrl}
+                      onChange={(e) =>
+                        setEditingJob({
+                          ...editingJob,
+                          jobPostUrl: e.target.value,
+                        })
+                      }
+                      type="url"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="deadline"
+                      placeholder="Application Deadline"
+                      value={editingJob.deadline}
+                      onChange={(e) =>
+                        setEditingJob({
+                          ...editingJob,
+                          deadline: e.target.value,
+                        })
+                      }
+                      type="date"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2">
+                    <Upload className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="resume"
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          if (file.type !== "application/pdf") {
+                            toast.error("Please upload a PDF file");
+                            return;
+                          }
+                          // Handle file upload here if needed
+                        }
+                      }}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  {editingJob.resume && (
+                    <p className="text-sm text-muted-foreground">
+                      Current Resume: {editingJob.resume.split("/").pop()}
+                    </p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
