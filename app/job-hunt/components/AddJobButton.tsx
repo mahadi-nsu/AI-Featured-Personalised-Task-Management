@@ -8,9 +8,15 @@ import { JobApplication } from "./JobList";
 
 interface AddJobButtonProps {
   onJobAdded?: (job: JobApplication | undefined, success: boolean) => void;
+  applications: JobApplication[];
+  setApplications: (applications: JobApplication[]) => void;
 }
 
-export default function AddJobButton({ onJobAdded }: AddJobButtonProps) {
+export default function AddJobButton({
+  onJobAdded,
+  applications,
+  setApplications,
+}: AddJobButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -29,6 +35,8 @@ export default function AddJobButton({ onJobAdded }: AddJobButtonProps) {
           onJobAdded?.(job, success);
           setIsOpen(false);
         }}
+        applications={applications}
+        setApplications={setApplications}
       />
     </>
   );

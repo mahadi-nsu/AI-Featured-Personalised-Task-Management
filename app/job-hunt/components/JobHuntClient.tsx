@@ -21,7 +21,9 @@ export default function JobHuntClient({
     success: boolean
   ) => {
     if (success && newJob) {
-      setApplications((prev) => [newJob, ...prev]);
+      // Create a new array reference
+      const updatedApplications = [newJob, ...applications];
+      setApplications(updatedApplications);
     } else {
       toast.error("Failed to add job. Please try again.");
     }
@@ -38,7 +40,11 @@ export default function JobHuntClient({
             Track and manage your job applications
           </p>
         </div>
-        <AddJobButton onJobAdded={handleJobAdded} />
+        <AddJobButton
+          onJobAdded={handleJobAdded}
+          applications={applications}
+          setApplications={setApplications}
+        />
       </div>
 
       <JobList initialApplications={applications} />

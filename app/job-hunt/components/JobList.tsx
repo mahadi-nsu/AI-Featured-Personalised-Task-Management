@@ -172,7 +172,6 @@ const slowPulseKeyframes = `
 const StyleTag = () => <style>{slowPulseKeyframes}</style>;
 
 export default function JobList({ initialApplications }: JobListProps) {
-  const [applications, setApplications] = useState(initialApplications);
   const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
   const [deletingJob, setDeletingJob] = useState<JobApplication | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -202,11 +201,8 @@ export default function JobList({ initialApplications }: JobListProps) {
 
       if (error) throw error;
 
-      setApplications((prev) =>
-        prev.map((app) => (app.id === editingJob.id ? editingJob : app))
-      );
-      setEditingJob(null);
-      toast.success("Job application updated successfully!");
+      // Refresh the page to get updated data
+      window.location.reload();
     } catch (error) {
       toast.error("Failed to update job application");
     } finally {
@@ -226,11 +222,8 @@ export default function JobList({ initialApplications }: JobListProps) {
 
       if (error) throw error;
 
-      setApplications((prev) =>
-        prev.filter((app) => app.id !== deletingJob.id)
-      );
-      setDeletingJob(null);
-      toast.success("Job application deleted successfully!");
+      // Refresh the page to get updated data
+      window.location.reload();
     } catch (error) {
       toast.error("Failed to delete job application");
     } finally {
@@ -242,7 +235,7 @@ export default function JobList({ initialApplications }: JobListProps) {
     <>
       <StyleTag />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {applications.map((job) => (
+        {initialApplications.map((job) => (
           <Card
             key={job.id}
             className={cn(

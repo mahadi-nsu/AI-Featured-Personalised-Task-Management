@@ -25,9 +25,17 @@ interface AddJobModalProps {
   isOpen: boolean;
   onClose: () => void;
   onJobAdded?: (job: JobApplication | undefined, success: boolean) => void;
+  applications: JobApplication[];
+  setApplications: (applications: JobApplication[]) => void;
 }
 
-export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
+export function AddJobModal({
+  isOpen,
+  onClose,
+  onJobAdded,
+  applications,
+  setApplications,
+}: AddJobModalProps) {
   const [companyName, setCompanyName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [jobSummary, setJobSummary] = useState("");
@@ -59,7 +67,6 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
 
         if (uploadError) throw uploadError;
 
-        // Get public URL
         const {
           data: { publicUrl },
         } = supabase.storage.from("resumes").getPublicUrl(fileName);
@@ -67,9 +74,11 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
         resumeUrl = publicUrl;
       }
 
-      const newJob: Omit<JobApplication, "id"> = {
+      const newJob = {
         companyName,
+        // jobTitle,
         jobSummary,
+        // location,
         jobPostUrl,
         status,
         source,
@@ -86,7 +95,26 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: AddJobModalProps) {
 
       if (error) throw error;
 
-      onJobAdded?.(data, true);
+      // Create complete job data with the returned ID
+      const completeJobData: JobApplication = {
+        id: data.id,
+        companyName: data.companyName,
+        jobTitle: data.jobTitle,
+        jobSummary: data.jobSummary,
+        location: data.location,
+        jobPostUrl: data.jobPostUrl,
+        status: data.status,
+        source: data.source,
+        applyDate: data.applyDate,
+        deadline: data.deadline,
+        resume: data.resume,
+      };
+
+      // Update state directly
+      setApplications([completeJobData, ...applications]);
+
+      // Call the callback
+      onJobAdded?.(completeJobData, true);
       onClose();
       toast.success("Job application added successfully!");
 
