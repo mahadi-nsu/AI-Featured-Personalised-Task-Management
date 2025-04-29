@@ -21,6 +21,7 @@ import {
   Pencil,
   Trash2,
   MapPin,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -187,11 +188,11 @@ export default function JobList({ initialApplications }: JobListProps) {
         .from("applied_jobs")
         .update({
           companyName: editingJob.companyName,
-          // jobTitle: editingJob.jobTitle,
+          jobTitle: editingJob.jobTitle,
           jobSummary: editingJob.jobSummary,
           status: editingJob.status,
           source: editingJob.source,
-          // location: editingJob.location,
+          location: editingJob.location,
           applyDate: editingJob.applyDate,
           jobPostUrl: editingJob.jobPostUrl,
           deadline: editingJob.deadline,
@@ -243,64 +244,64 @@ export default function JobList({ initialApplications }: JobListProps) {
               getCardStatusStyle(job.status)
             )}
           >
-            <CardHeader className="bg-gradient-to-r from-slate-50/50 to-purple-50/20 dark:from-slate-950/50 dark:to-purple-950/20 border-b dark:border-slate-800/50 relative overflow-hidden p-4">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="flex justify-between items-start relative z-10">
-                <div className="flex items-start gap-3 flex-grow mr-4">
-                  <div className="mt-1">
-                    <Building2 className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="flex flex-col space-y-1">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  {job.companyName}
+                </CardTitle>
+                {job.jobTitle && (
+                  <div className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                    <Briefcase className="h-3 w-3 text-primary" />
+                    <span className="text-primary">{job.jobTitle}</span>
                   </div>
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                      {job.companyName}
-                    </CardTitle>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        Applied:{" "}
-                        {format(new Date(job.applyDate), "MMM d, yyyy")}
-                      </span>
-                    </div>
+                )}
+                {job.location && (
+                  <div className="text-xs text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    {job.location}
                   </div>
-                </div>
-                <div className="flex items-center space-x-1 flex-shrink-0 mt-1">
-                  <button
-                    onClick={() => setEditingJob(job)}
-                    className="text-muted-foreground hover:text-primary transition-colors p-1 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
-                    title="Edit Application"
+                )}
+              </div>
+              <div className="flex items-center gap-1 p-1 rounded-md bg-slate-100/50 dark:bg-slate-800/50">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
+                  onClick={() => setEditingJob(job)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
+                  onClick={() => setDeletingJob(job)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                {job.resume && (
+                  <a
+                    href={job.resume}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="View Resume"
+                    className="h-8 w-8 flex items-center justify-center text-blue-500 hover:text-blue-600 transition-colors rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
                   >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setDeletingJob(job)}
-                    className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
-                    title="Delete Application"
+                    <Upload className="h-4 w-4" />
+                  </a>
+                )}
+                {job.jobPostUrl && (
+                  <a
+                    href={job.jobPostUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="View Job Post"
+                    className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                  {job.resume && (
-                    <a
-                      href={job.resume}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="View Resume"
-                      className="text-blue-500 hover:text-blue-600 transition-colors p-1 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
-                    >
-                      <Upload className="h-4 w-4" />
-                    </a>
-                  )}
-                  {job.jobPostUrl && (
-                    <a
-                      href={job.jobPostUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="View Job Post"
-                      className="text-muted-foreground hover:text-primary transition-colors p-1 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  )}
-                </div>
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                )}
               </div>
             </CardHeader>
             <CardContent className="p-4 space-y-3 relative group-hover:bg-slate-50/50 dark:group-hover:bg-slate-950/50 transition-colors">

@@ -10,6 +10,8 @@ export default async function JobHuntPage() {
     .select("*")
     .order("applyDate", { ascending: false });
 
+  console.log("applications", applications);
+
   if (error) {
     console.error("Error fetching applications:", error);
     throw new Error("Failed to fetch applications");

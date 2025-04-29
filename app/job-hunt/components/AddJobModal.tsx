@@ -76,9 +76,9 @@ export function AddJobModal({
 
       const newJob = {
         companyName,
-        // jobTitle,
+        jobTitle,
         jobSummary,
-        // location,
+        location,
         jobPostUrl,
         status,
         source,
