@@ -288,11 +288,11 @@ export default function JobList({ initialApplications }: JobListProps) {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-1 p-1 rounded-md bg-slate-100/50 dark:bg-slate-800/50">
+              <div className="flex items-center gap-1 p-1.5 rounded-lg bg-gradient-to-r from-slate-50/50 to-purple-50/20 dark:from-slate-950/50 dark:to-purple-950/20 border border-slate-200/50 dark:border-slate-800/50 shadow-[0_0_15px_rgba(0,0,0,0.1)] dark:shadow-[0_0_15px_rgba(0,0,0,0.3)] hover:shadow-[0_0_20px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_0_20px_rgba(0,0,0,0.4)] transition-all duration-300">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
+                  className="h-8 w-8 hover:bg-slate-200/70 dark:hover:bg-slate-700/70 hover:scale-105 transition-transform"
                   onClick={() => setEditingJob(job)}
                 >
                   <Pencil className="h-4 w-4" />
@@ -300,7 +300,7 @@ export default function JobList({ initialApplications }: JobListProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
+                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-slate-200/70 dark:hover:bg-slate-700/70 hover:scale-105 transition-transform"
                   onClick={() => setDeletingJob(job)}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -311,7 +311,7 @@ export default function JobList({ initialApplications }: JobListProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     title="View Resume"
-                    className="h-8 w-8 flex items-center justify-center text-blue-500 hover:text-blue-600 transition-colors rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
+                    className="h-8 w-8 flex items-center justify-center text-blue-500 hover:text-blue-600 transition-all hover:scale-105 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
                   >
                     <Upload className="h-4 w-4" />
                   </a>
@@ -322,7 +322,7 @@ export default function JobList({ initialApplications }: JobListProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     title="View Job Post"
-                    className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
+                    className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-primary transition-all hover:scale-105 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
                   >
                     <ExternalLink className="h-4 w-4" />
                   </a>
