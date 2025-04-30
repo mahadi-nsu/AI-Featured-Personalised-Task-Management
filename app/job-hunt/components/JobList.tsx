@@ -173,6 +173,14 @@ const slowPulseKeyframes = `
 // Style tag to inject keyframes
 const StyleTag = () => <style>{slowPulseKeyframes}</style>;
 
+const isDeadlinePassed = (deadline: string) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const deadlineDate = new Date(deadline);
+  deadlineDate.setHours(0, 0, 0, 0);
+  return deadlineDate < today;
+};
+
 export default function JobList({ initialApplications }: JobListProps) {
   const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
   const [deletingJob, setDeletingJob] = useState<JobApplication | null>(null);
@@ -356,10 +364,27 @@ export default function JobList({ initialApplications }: JobListProps) {
                   </Badge>
                 </div>
                 {job.deadline && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    <span>
+                  <div
+                    className={cn(
+                      "flex items-center gap-2 text-xs",
+                      isDeadlinePassed(job.deadline)
+                        ? "text-red-500 dark:text-red-400"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar
+                      className={cn(
+                        "h-3 w-3",
+                        isDeadlinePassed(job.deadline) && "animate-pulse"
+                      )}
+                    />
+                    <span className="flex items-center gap-1">
                       Deadline: {format(new Date(job.deadline), "MMM d, yyyy")}
+                      {isDeadlinePassed(job.deadline) && (
+                        <span className="inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-400">
+                          Passed
+                        </span>
+                      )}
                     </span>
                   </div>
                 )}
