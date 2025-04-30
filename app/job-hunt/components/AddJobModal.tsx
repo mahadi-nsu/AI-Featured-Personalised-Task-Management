@@ -17,6 +17,7 @@ import {
   MapPin,
   Calendar,
   Upload,
+  Briefcase,
 } from "lucide-react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
@@ -173,17 +174,20 @@ export function AddJobModal({
               </div>
             </div>
             <div className="grid gap-2">
-              <Input
-                id="jobTitle"
-                placeholder="Job Title"
-                value={jobTitle}
-                onChange={(e) => setJobTitle(e.target.value)}
-                required
-                disabled={isSubmitting}
-              />
+              <div className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="jobTitle"
+                  placeholder="Job Title"
+                  value={jobTitle}
+                  onChange={(e) => setJobTitle(e.target.value)}
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
             </div>
             <div className="grid gap-2">
-              <div className="h-[200px] overflow-y-auto border rounded-md">
+              <div className="h-[200px] overflow-y-auto rounded-md">
                 <RichTextEditor
                   value={jobSummary}
                   onChange={setJobSummary}

@@ -504,19 +504,22 @@ export default function JobList({ initialApplications }: JobListProps) {
                   </div>
                 </div>
                 <div className="grid gap-2">
-                  <Input
-                    id="jobTitle"
-                    placeholder="Job Title"
-                    value={editingJob.jobTitle}
-                    onChange={(e) =>
-                      setEditingJob({
-                        ...editingJob,
-                        jobTitle: e.target.value,
-                      })
-                    }
-                    required
-                    disabled={isSubmitting}
-                  />
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="jobTitle"
+                      placeholder="Job Title"
+                      value={editingJob.jobTitle}
+                      onChange={(e) =>
+                        setEditingJob({
+                          ...editingJob,
+                          jobTitle: e.target.value,
+                        })
+                      }
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <div className="h-[200px] overflow-y-auto border rounded-md">
