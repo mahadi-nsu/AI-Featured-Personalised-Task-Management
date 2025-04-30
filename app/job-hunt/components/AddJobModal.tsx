@@ -150,11 +150,14 @@ export function AddJobModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[625px]">
+      <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Add New Job Application</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
+        <form
+          onSubmit={handleSubmit}
+          className="overflow-y-auto max-h-[calc(90vh-4rem)] pr-2"
+        >
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <div className="flex items-center gap-2">
@@ -180,11 +183,13 @@ export function AddJobModal({
               />
             </div>
             <div className="grid gap-2">
-              <RichTextEditor
-                value={jobSummary}
-                onChange={setJobSummary}
-                placeholder="Job description and requirements..."
-              />
+              <div className="h-[200px] overflow-y-auto border rounded-md">
+                <RichTextEditor
+                  value={jobSummary}
+                  onChange={setJobSummary}
+                  placeholder="Job description and requirements..."
+                />
+              </div>
             </div>
             <div className="grid gap-2">
               <div className="flex items-center gap-2">

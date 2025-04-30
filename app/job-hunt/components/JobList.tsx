@@ -450,12 +450,15 @@ export default function JobList({ initialApplications }: JobListProps) {
         open={editingJob !== null}
         onOpenChange={() => setEditingJob(null)}
       >
-        <DialogContent className="sm:max-w-[625px]">
+        <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Edit Job Application</DialogTitle>
           </DialogHeader>
           {editingJob && (
-            <form onSubmit={handleEdit}>
+            <form
+              onSubmit={handleEdit}
+              className="overflow-y-auto max-h-[calc(90vh-4rem)] pr-2"
+            >
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <div className="flex items-center gap-2">
@@ -491,16 +494,18 @@ export default function JobList({ initialApplications }: JobListProps) {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <RichTextEditor
-                    value={editingJob.jobSummary}
-                    onChange={(value) =>
-                      setEditingJob({
-                        ...editingJob,
-                        jobSummary: value,
-                      })
-                    }
-                    placeholder="Job description and requirements..."
-                  />
+                  <div className="h-[200px] overflow-y-auto border rounded-md">
+                    <RichTextEditor
+                      value={editingJob.jobSummary}
+                      onChange={(value) =>
+                        setEditingJob({
+                          ...editingJob,
+                          jobSummary: value,
+                        })
+                      }
+                      placeholder="Job description and requirements..."
+                    />
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <div className="flex items-center gap-2">
