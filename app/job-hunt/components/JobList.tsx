@@ -59,6 +59,7 @@ export interface JobApplication {
   jobPostUrl: string;
   deadline?: string;
   resume?: string;
+  newResumeFile?: File;
 }
 
 interface JobListProps {
@@ -184,6 +185,30 @@ export default function JobList({ initialApplications }: JobListProps) {
 
     setIsSubmitting(true);
     try {
+      let resumeUrl = editingJob.resume;
+
+      // Handle resume file upload if a new file is selected
+      if (editingJob.newResumeFile) {
+        const file = editingJob.newResumeFile;
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${editingJob.id}-${Date.now()}.${fileExt}`;
+        const filePath = `resumes/${fileName}`;
+
+        // Upload the file to Supabase storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("resumes")
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        // Get the public URL for the uploaded file
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("resumes").getPublicUrl(filePath);
+
+        resumeUrl = publicUrl;
+      }
+
       const { error } = await supabase
         .from("applied_jobs")
         .update({
@@ -196,7 +221,7 @@ export default function JobList({ initialApplications }: JobListProps) {
           applyDate: editingJob.applyDate,
           jobPostUrl: editingJob.jobPostUrl,
           deadline: editingJob.deadline,
-          resume: editingJob.resume,
+          resume: resumeUrl,
         })
         .eq("id", editingJob.id);
 
@@ -545,7 +570,10 @@ export default function JobList({ initialApplications }: JobListProps) {
                             toast.error("Please upload a PDF file");
                             return;
                           }
-                          // Handle file upload here if needed
+                          setEditingJob({
+                            ...editingJob,
+                            newResumeFile: file,
+                          });
                         }
                       }}
                       disabled={isSubmitting}
