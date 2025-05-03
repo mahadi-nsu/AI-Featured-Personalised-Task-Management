@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { JobApplication } from "./JobList";
 import {
@@ -47,6 +48,7 @@ export function AddJobModal({
   const [deadline, setDeadline] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [shouldSummarize, setShouldSummarize] = useState(false);
   const supabase = createClientComponentClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -193,6 +195,17 @@ export function AddJobModal({
                   onChange={setJobSummary}
                   placeholder="Job description and requirements..."
                 />
+              </div>
+              <div className="flex justify-end">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    Summarize the job description using AI
+                  </span>
+                  <Switch
+                    checked={shouldSummarize}
+                    onCheckedChange={setShouldSummarize}
+                  />
+                </div>
               </div>
             </div>
             <div className="grid gap-2">
