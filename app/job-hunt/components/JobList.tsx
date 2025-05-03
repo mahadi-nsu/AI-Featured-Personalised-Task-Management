@@ -394,66 +394,87 @@ export default function JobList({ initialApplications }: JobListProps) {
             {job.status !== "Rejected" ? (
               <CardFooter className="p-6 border-t border-slate-200/50 dark:border-slate-800/50">
                 <div className="w-full space-y-3">
-                  <div className="relative flex justify-between">
-                    <div className="w-full flex justify-between relative">
-                      {/* Progress Bar - Positioned between first and last icons */}
-                      <div className="absolute top-4 left-[calc(2rem+4px)] right-[calc(2rem+4px)] h-[3px] bg-slate-200 dark:bg-slate-700 -z-0">
-                        <div
-                          className={cn(
-                            "h-full transition-all duration-500",
-                            getTrackerInfo(job.status).currentIndex === 0
-                              ? "w-0 bg-yellow-500"
-                              : getTrackerInfo(job.status).currentIndex === 1
-                              ? "w-1/2 bg-gradient-to-r from-yellow-500 to-blue-500 [animation:slow-pulse_2.5s_ease-in-out_infinite]"
-                              : getTrackerInfo(job.status).currentIndex === 2
-                              ? "w-full bg-gradient-to-r from-yellow-500 via-blue-500 to-green-500"
-                              : "w-0"
-                          )}
-                          style={{ transformOrigin: "center left" }}
-                        />
-                      </div>
-
-                      {/* Icons and Labels */}
-                      {getTrackerInfo(job.status).steps.map((step, index) => {
-                        const isActive =
-                          index <=
-                          (getTrackerInfo(job.status).currentIndex ?? -1);
-                        const isCurrent =
-                          index === getTrackerInfo(job.status).currentIndex;
-
-                        return (
-                          <div
-                            key={step.status}
-                            className="flex flex-col items-center relative z-10"
-                          >
-                            <div
-                              className={cn(
-                                "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500",
-                                isCurrent
-                                  ? `bg-white dark:bg-slate-900 ring-4 ${step.bgColor}/30 shadow-lg scale-110 [animation:slow-pulse_2.5s_ease-in-out_infinite]`
-                                  : "bg-slate-100 dark:bg-slate-800",
-                                isActive
-                                  ? `${step.color} ring-${step.bgColor}/20`
-                                  : "text-slate-400"
-                              )}
-                            >
-                              <step.icon className="w-4 h-4" />
-                            </div>
-
-                            <span
-                              className={cn(
-                                "mt-2 text-xs font-medium transition-colors duration-500",
-                                isCurrent ? "font-bold" : "",
-                                isActive ? step.color : "text-slate-400"
-                              )}
-                            >
-                              {step.label}
-                            </span>
-                          </div>
-                        );
-                      })}
+                  {job.status === "Not Applied" ? (
+                    <div className="w-full flex items-center justify-center gap-2 text-orange-500">
+                      <Clock className="w-4 h-4" />
+                      <span className="text-sm font-medium">
+                        {job.deadline ? (
+                          <>
+                            Please apply asap, we have{" "}
+                            {Math.ceil(
+                              (new Date(job.deadline).getTime() -
+                                new Date().getTime()) /
+                                (1000 * 60 * 60 * 24)
+                            )}{" "}
+                            days left
+                          </>
+                        ) : (
+                          "Please apply asap"
+                        )}
+                      </span>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="relative flex justify-between">
+                      <div className="w-full flex justify-between relative">
+                        {/* Progress Bar - Positioned between first and last icons */}
+                        <div className="absolute top-4 left-[calc(2rem+4px)] right-[calc(2rem+4px)] h-[3px] bg-slate-200 dark:bg-slate-700 -z-0">
+                          <div
+                            className={cn(
+                              "h-full transition-all duration-500",
+                              getTrackerInfo(job.status).currentIndex === 0
+                                ? "w-0 bg-yellow-500"
+                                : getTrackerInfo(job.status).currentIndex === 1
+                                ? "w-1/2 bg-gradient-to-r from-yellow-500 to-blue-500 [animation:slow-pulse_2.5s_ease-in-out_infinite]"
+                                : getTrackerInfo(job.status).currentIndex === 2
+                                ? "w-full bg-gradient-to-r from-yellow-500 via-blue-500 to-green-500"
+                                : "w-0"
+                            )}
+                            style={{ transformOrigin: "center left" }}
+                          />
+                        </div>
+
+                        {/* Icons and Labels */}
+                        {getTrackerInfo(job.status).steps.map((step, index) => {
+                          const isActive =
+                            index <=
+                            (getTrackerInfo(job.status).currentIndex ?? -1);
+                          const isCurrent =
+                            index === getTrackerInfo(job.status).currentIndex;
+
+                          return (
+                            <div
+                              key={step.status}
+                              className="flex flex-col items-center relative z-10"
+                            >
+                              <div
+                                className={cn(
+                                  "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500",
+                                  isCurrent
+                                    ? `bg-white dark:bg-slate-900 ring-4 ${step.bgColor}/30 shadow-lg scale-110 [animation:slow-pulse_2.5s_ease-in-out_infinite]`
+                                    : "bg-slate-100 dark:bg-slate-800",
+                                  isActive
+                                    ? `${step.color} ring-${step.bgColor}/20`
+                                    : "text-slate-400"
+                                )}
+                              >
+                                <step.icon className="w-4 h-4" />
+                              </div>
+
+                              <span
+                                className={cn(
+                                  "mt-2 text-xs font-medium transition-colors duration-500",
+                                  isCurrent ? "font-bold" : "",
+                                  isActive ? step.color : "text-slate-400"
+                                )}
+                              >
+                                {step.label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardFooter>
             ) : (
@@ -638,6 +659,7 @@ export default function JobList({ initialApplications }: JobListProps) {
                       <option value="Rejected">Rejected</option>
                       <option value="Accepted">Accepted</option>
                       <option value="No Response">No Response</option>
+                      <option value="Not Applied">Not Applied</option>
                     </select>
                   </div>
                   <div className="space-y-2">

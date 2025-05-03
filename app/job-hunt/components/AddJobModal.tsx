@@ -264,6 +264,7 @@ export function AddJobModal({
                   <option value="Rejected">Rejected</option>
                   <option value="Accepted">Accepted</option>
                   <option value="No Response">No Response</option>
+                  <option value="Not Applied">Not Applied</option>
                 </select>
               </div>
               <div className="space-y-2">
