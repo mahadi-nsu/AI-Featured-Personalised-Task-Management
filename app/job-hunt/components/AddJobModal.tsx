@@ -77,6 +77,12 @@ export function AddJobModal({
         resumeUrl = publicUrl;
       }
 
+      // Get the current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
       const newJob = {
         companyName,
         jobTitle,
@@ -88,6 +94,7 @@ export function AddJobModal({
         applyDate: new Date().toISOString().split("T")[0],
         deadline: deadline || undefined,
         resume: resumeUrl || undefined,
+        user_id: user.id,
       };
 
       const { data, error } = await supabase
@@ -204,6 +211,7 @@ export function AddJobModal({
                   <Switch
                     checked={shouldSummarize}
                     onCheckedChange={setShouldSummarize}
+                    disabled
                   />
                 </div>
               </div>
