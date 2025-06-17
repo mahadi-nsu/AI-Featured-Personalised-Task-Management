@@ -3,13 +3,42 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Menu, X, User } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function NavLinks() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const router = useRouter();
+  const supabase = createClientComponentClient();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  }, [supabase.auth]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.refresh();
+    router.push("/auth/login");
+  };
 
   return (
     <>
@@ -98,6 +127,39 @@ export function NavLinks() {
           Backend/Localstorage
         </Link>
         <ThemeToggle />
+
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <User className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {user.email}
+                  </p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user.user_metadata?.full_name || "User"}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 focus:bg-red-50 dark:focus:bg-red-950/50"
+              >
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Link href="/auth/login">
+            <Button variant="ghost">Sign In</Button>
+          </Link>
+        )}
       </div>
 
       {/* Mobile Navigation */}
@@ -170,6 +232,23 @@ export function NavLinks() {
             Backend/Localstorage
           </Link>
           <ThemeToggle />
+
+          {user ? (
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-white">{user.email}</p>
+              <Button
+                variant="ghost"
+                onClick={handleLogout}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50"
+              >
+                Log out
+              </Button>
+            </div>
+          ) : (
+            <Link href="/auth/login">
+              <Button variant="ghost">Sign In</Button>
+            </Link>
+          )}
         </div>
       </div>
     </>
