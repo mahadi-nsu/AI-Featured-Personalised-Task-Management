@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Task, TaskPriority, TaskStatus } from "@/lib/utils";
 import { Plus, Tag, Clock } from "lucide-react";
-import { addTask } from "@/lib/taskStorage";
+import { createTaskInSupabase } from "@/lib/taskStorage";
 import { toast } from "sonner";
 
 interface CreateTaskModalProps {
@@ -87,24 +87,30 @@ export function CreateTaskModal({
           order: 0,
         };
 
-        const updatedTasks = await addTask(newTask);
-        onTaskCreated?.(updatedTasks);
+        const createdTask = await createTaskInSupabase(newTask);
+
+        if (createdTask) {
+          onTaskCreated?.([createdTask]);
+          toast.success("Task created successfully!");
+
+          // Reset form
+          setFeatureName("");
+          setDescription("");
+          setPriority(TaskPriority.LOW);
+          setEstimatedHours(0);
+          setEstimatedMinutes(0);
+
+          if (externalIsOpen === undefined) {
+            setIsOpen(false);
+          } else {
+            externalOnClose?.();
+          }
+        } else {
+          toast.error("Failed to create task");
+        }
       }
-
-      setFeatureName("");
-      setDescription("");
-      setPriority(TaskPriority.LOW);
-      setEstimatedHours(0);
-      setEstimatedMinutes(0);
-
-      if (externalIsOpen === undefined) {
-        setIsOpen(false);
-      } else {
-        externalOnClose?.();
-      }
-
-      toast.success("Task created successfully!");
     } catch (error) {
+      console.error("Error creating task:", error);
       toast.error("Failed to create task");
     }
   };

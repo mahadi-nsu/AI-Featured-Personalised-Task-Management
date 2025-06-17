@@ -275,7 +275,7 @@ export async function fetchTasks() {
     return [];
   }
 
-  console.log("Fetched tasks:", tasks);
+  // console.log("Fetched tasks:", tasks);
 
   return tasks.map((task: any) => ({
     id: task.id,
@@ -290,4 +290,60 @@ export async function fetchTasks() {
     estimatedMinutes: task.estimated_minutes,
     startedAt: task.started_at,
   }));
+}
+
+// Create task in Supabase
+export async function createTaskInSupabase(task: Task) {
+  const supabase = createClientComponentClient();
+
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    console.log("No user found");
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert([
+      {
+        user_id: user.id,
+        feature_name: task.featureName,
+        description: task.description,
+        status: task.status,
+        date: task.date,
+        created_at: task.createdAt,
+        order_index: task.order,
+        priority: task.priority,
+        estimated_hours: task.estimatedHours,
+        estimated_minutes: task.estimatedMinutes,
+        started_at: task.startedAt,
+      },
+    ])
+    .select()
+    .single();
+
+  console.log("Created task:", data);
+
+  if (error) {
+    console.error("Error creating task:", error);
+    return null;
+  }
+
+  // Convert the response back to our Task format
+  return {
+    id: data.id,
+    featureName: data.feature_name,
+    description: data.description,
+    status: data.status as TaskStatus,
+    date: data.date,
+    createdAt: data.created_at,
+    order: data.order_index,
+    priority: data.priority,
+    estimatedHours: data.estimated_hours,
+    estimatedMinutes: data.estimated_minutes,
+    startedAt: data.started_at,
+  };
 }
