@@ -50,6 +50,7 @@ import {
   updateTask,
   deleteTask,
   updateTaskOrder,
+  fetchTasks,
 } from "@/lib/taskStorage";
 import {
   DndContext,
@@ -1217,9 +1218,13 @@ export function TodaysTasks() {
 
   // Load tasks on component mount
   useEffect(() => {
-    const loadedTasks = loadTasks();
-    console.log("TodaysTasks - Loaded tasks:", loadedTasks);
-    setTasks(loadedTasks);
+    const loadTasksFromSupabase = async () => {
+      const loadedTasks = await fetchTasks();
+      console.log("TodaysTasks - Loaded tasks:", loadedTasks);
+      setTasks(loadedTasks);
+    };
+
+    loadTasksFromSupabase();
   }, []);
 
   // Get today's tasks

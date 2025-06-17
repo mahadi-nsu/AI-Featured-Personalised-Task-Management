@@ -1,4 +1,11 @@
 import { Task, TaskStatus, TaskPriority } from "./utils";
+import { createClient } from "@supabase/supabase-js";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 // Interface for old todos format
 interface OldTodo {
@@ -242,3 +249,45 @@ export const updateTaskOrder = (
   saveTasks(allUpdatedTasks);
   return allUpdatedTasks;
 };
+
+// Fetch tasks from Supabase
+export async function fetchTasks() {
+  const supabase = createClientComponentClient();
+
+  // Get the current session
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    console.log("No session found");
+    return [];
+  }
+
+  const { data: tasks, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("user_id", session.user.id)
+    .order("order_index", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching tasks:", error);
+    return [];
+  }
+
+  console.log("Fetched tasks:", tasks);
+
+  return tasks.map((task: any) => ({
+    id: task.id,
+    featureName: task.feature_name,
+    description: task.description,
+    status: task.status as TaskStatus,
+    date: task.date,
+    createdAt: task.created_at,
+    order: task.order_index,
+    priority: task.priority,
+    estimatedHours: task.estimated_hours,
+    estimatedMinutes: task.estimated_minutes,
+    startedAt: task.started_at,
+  }));
+}
