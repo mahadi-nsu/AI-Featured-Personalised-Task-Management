@@ -131,8 +131,11 @@ export function NavLinks() {
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <User className="h-5 w-5" />
+              <Button
+                variant="ghost"
+                className="relative h-10 w-10 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 border-none shadow-lg"
+              >
+                <User className="h-8 w-8" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -147,10 +150,7 @@ export function NavLinks() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={handleLogout}
-                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 focus:bg-red-50 dark:focus:bg-red-950/50"
-              >
+              <DropdownMenuItem onClick={handleLogout}>
                 Log out
               </DropdownMenuItem>
             </DropdownMenuContent>
