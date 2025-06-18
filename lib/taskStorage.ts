@@ -292,6 +292,43 @@ export async function fetchTasks() {
   }));
 }
 
+// Calculate the next order for a task on a specific date
+export async function calculateNextOrder(date: string): Promise<number> {
+  const supabase = createClientComponentClient();
+
+  // Get the current session
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    console.log("No session found");
+    return 0;
+  }
+
+  // Get the highest order for tasks on the same date
+  const { data: tasks, error } = await supabase
+    .from("tasks")
+    .select("order_index")
+    .eq("user_id", session.user.id)
+    .eq("date", date)
+    .order("order_index", { ascending: false })
+    .limit(1);
+
+  if (error) {
+    console.error("Error fetching tasks for order calculation:", error);
+    return 0;
+  }
+
+  // If no tasks exist for this date, start with 0
+  if (!tasks || tasks.length === 0) {
+    return 0;
+  }
+
+  // Return the highest order + 1
+  return (tasks[0].order_index || 0) + 1;
+}
+
 // Create task in Supabase
 export async function createTaskInSupabase(task: Task) {
   const supabase = createClientComponentClient();
@@ -305,6 +342,9 @@ export async function createTaskInSupabase(task: Task) {
     return null;
   }
 
+  // Calculate the next order for this date
+  const nextOrder = await calculateNextOrder(task.date);
+
   const { data, error } = await supabase
     .from("tasks")
     .insert([
@@ -315,7 +355,7 @@ export async function createTaskInSupabase(task: Task) {
         status: task.status,
         date: task.date,
         created_at: task.createdAt,
-        order_index: task.order,
+        order_index: nextOrder,
         priority: task.priority,
         estimated_hours: task.estimatedHours,
         estimated_minutes: task.estimatedMinutes,

@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Task, TaskPriority, TaskStatus } from "@/lib/utils";
 import { Plus, Tag, Clock } from "lucide-react";
-import { createTaskInSupabase } from "@/lib/taskStorage";
+import { createTaskInSupabase, fetchTasks } from "@/lib/taskStorage";
 import { toast } from "sonner";
 
 interface CreateTaskModalProps {
@@ -90,10 +90,10 @@ export function CreateTaskModal({
         const createdTask = await createTaskInSupabase(newTask);
 
         if (createdTask) {
-          onTaskCreated?.([createdTask]);
+          const allTasks = await fetchTasks();
+          onTaskCreated?.(allTasks);
           toast.success("Task created successfully!");
 
-          // Reset form
           setFeatureName("");
           setDescription("");
           setPriority(TaskPriority.LOW);
