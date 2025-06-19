@@ -200,11 +200,49 @@ export const updateTask = (taskId: string, updates: Partial<Task>): Task[] => {
   return updatedTasks;
 };
 
-// Delete a task
-export const deleteTask = (taskId: string): Task[] => {
-  const tasks = loadTasks();
-  const updatedTasks = tasks.filter((task) => task.id !== taskId);
-  saveTasks(updatedTasks);
+// Delete task from Supabase
+export async function deleteTaskFromSupabase(taskId: string) {
+  const supabase = createClientComponentClient();
+
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    console.log("No user found");
+    return false;
+  }
+
+  const { error } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("id", taskId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error deleting task:", error);
+    return false;
+  }
+
+  console.log("Task deleted successfully:", taskId);
+  return true;
+}
+
+// Delete a task (updated to use Supabase)
+export const deleteTask = async (taskId: string): Promise<Task[]> => {
+  // Delete from Supabase
+  const success = await deleteTaskFromSupabase(taskId);
+
+  if (!success) {
+    // If Supabase delete fails, fall back to localStorage for now
+    const tasks = loadTasks();
+    const updatedTasks = tasks.filter((task) => task.id !== taskId);
+    saveTasks(updatedTasks);
+    return updatedTasks;
+  }
+
+  // If Supabase delete succeeds, fetch updated tasks from database
+  const updatedTasks = await fetchTasks();
   return updatedTasks;
 };
 

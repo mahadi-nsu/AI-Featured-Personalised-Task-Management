@@ -179,16 +179,21 @@ function SortableTaskItem({
     setDeletingTask(task);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deletingTask) {
-      const updatedTasks = deleteTask(deletingTask.id);
-      setDeletingTask(null);
-      setTasks(updatedTasks);
+      try {
+        const updatedTasks = await deleteTask(deletingTask.id);
+        setDeletingTask(null);
+        setTasks(updatedTasks);
 
-      // Show success toast
-      toast.success("Task deleted successfully", {
-        description: `"${deletingTask.featureName}" has been removed from your task list.`,
-      });
+        // Show success toast
+        toast.success("Task deleted successfully", {
+          description: `"${deletingTask.featureName}" has been removed from your task list.`,
+        });
+      } catch (error) {
+        console.error("Error deleting task:", error);
+        toast.error("Failed to delete task");
+      }
     }
   };
 
