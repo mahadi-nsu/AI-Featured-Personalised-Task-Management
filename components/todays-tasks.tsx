@@ -51,6 +51,7 @@ import {
   deleteTask,
   updateTaskOrder,
   fetchTasks,
+  updateTaskInSupabase,
 } from "@/lib/taskStorage";
 import {
   DndContext,
@@ -79,6 +80,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { CreateTaskModal } from "@/components/create-task-modal";
+import { TaskFormModal } from "./task-form-modal";
 
 // View modes
 type ViewMode = "list" | "kanban";
@@ -233,20 +235,25 @@ function SortableTaskItem({
     setEditedMinutes(task.estimatedMinutes || 0);
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (editingTask && editedFeatureName.trim() && editedDescription.trim()) {
-      const updatedTasks = updateTask(editingTask.id, {
-        featureName: editedFeatureName.trim(),
-        description: editedDescription.trim(),
-        priority: editedPriority,
-        estimatedHours: editedHours || undefined,
-        estimatedMinutes: editedMinutes || undefined,
-      });
-      setEditingTask(null);
-      setTasks(updatedTasks);
-      toast.success("Task updated successfully", {
-        description: `"${editedFeatureName}" has been updated.`,
-      });
+      try {
+        const updatedTasks = await updateTaskInSupabase(editingTask.id, {
+          featureName: editedFeatureName.trim(),
+          description: editedDescription.trim(),
+          priority: editedPriority,
+          estimatedHours: editedHours || undefined,
+          estimatedMinutes: editedMinutes || undefined,
+        });
+        setEditingTask(null);
+        setTasks(updatedTasks);
+        toast.success("Task updated successfully", {
+          description: `"${editedFeatureName}" has been updated.`,
+        });
+      } catch (error) {
+        console.error("Error updating task:", error);
+        toast.error("Failed to update task");
+      }
     }
   };
 
@@ -454,129 +461,30 @@ function SortableTaskItem({
       </div>
 
       {/* Edit Dialog */}
-      <Dialog
+      <TaskFormModal
         open={editingTask !== null}
-        onOpenChange={() => setEditingTask(null)}
-      >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Task</DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <Input
-              value={editedFeatureName}
-              onChange={(e) => setEditedFeatureName(e.target.value)}
-              placeholder="Edit feature/bug name..."
-              className="w-full"
-            />
-            <div className="flex flex-col gap-4">
-              <label className="text-sm font-medium flex items-center">
-                <Tag className="h-4 w-4 mr-1" />
-                Priority
-              </label>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.HIGH ? "default" : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.HIGH
-                      ? "bg-red-500 hover:bg-red-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.HIGH)}
-                >
-                  High
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.MEDIUM
-                      ? "default"
-                      : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.MEDIUM
-                      ? "bg-yellow-500 hover:bg-yellow-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.MEDIUM)}
-                >
-                  Medium
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.LOW ? "default" : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.LOW
-                      ? "bg-green-500 hover:bg-green-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.LOW)}
-                >
-                  Low
-                </Button>
-                {editedPriority && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setEditedPriority(undefined)}
-                  >
-                    No Priority
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center">
-                <Clock className="h-4 w-4 mr-1" />
-                Estimated Time
-              </label>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    value={editedHours}
-                    onChange={(e) =>
-                      setEditedHours(parseInt(e.target.value) || 0)
-                    }
-                    className="w-20"
-                  />
-                  <span className="text-sm whitespace-nowrap">hours</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={editedMinutes}
-                    onChange={(e) =>
-                      setEditedMinutes(parseInt(e.target.value) || 0)
-                    }
-                    className="w-20"
-                  />
-                  <span className="text-sm whitespace-nowrap">minutes</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingTask(null)}>
-              Cancel
-            </Button>
-            <Button onClick={saveEdit}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        mode="edit"
+        initialValues={editingTask || {}}
+        onSubmit={async (values) => {
+          if (editingTask) {
+            try {
+              const updatedTasks = await updateTaskInSupabase(
+                editingTask.id,
+                values
+              );
+              setEditingTask(null);
+              setTasks(updatedTasks);
+              toast.success("Task updated successfully", {
+                description: `"${values.featureName}" has been updated.`,
+              });
+            } catch (error) {
+              console.error("Error updating task:", error);
+              toast.error("Failed to update task");
+            }
+          }
+        }}
+        onClose={() => setEditingTask(null)}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog
@@ -722,20 +630,25 @@ function KanbanTaskItem({
     setEditedMinutes(task.estimatedMinutes || 0);
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (editingTask && editedFeatureName.trim() && editedDescription.trim()) {
-      const updatedTasks = updateTask(editingTask.id, {
-        featureName: editedFeatureName.trim(),
-        description: editedDescription.trim(),
-        priority: editedPriority,
-        estimatedHours: editedHours || undefined,
-        estimatedMinutes: editedMinutes || undefined,
-      });
-      setEditingTask(null);
-      setTasks(updatedTasks);
-      toast.success("Task updated successfully", {
-        description: `"${editedFeatureName}" has been updated.`,
-      });
+      try {
+        const updatedTasks = await updateTaskInSupabase(editingTask.id, {
+          featureName: editedFeatureName.trim(),
+          description: editedDescription.trim(),
+          priority: editedPriority,
+          estimatedHours: editedHours || undefined,
+          estimatedMinutes: editedMinutes || undefined,
+        });
+        setEditingTask(null);
+        setTasks(updatedTasks);
+        toast.success("Task updated successfully", {
+          description: `"${editedFeatureName}" has been updated.`,
+        });
+      } catch (error) {
+        console.error("Error updating task:", error);
+        toast.error("Failed to update task");
+      }
     }
   };
 
@@ -940,129 +853,30 @@ function KanbanTaskItem({
       </div>
 
       {/* Edit Dialog */}
-      <Dialog
+      <TaskFormModal
         open={editingTask !== null}
-        onOpenChange={() => setEditingTask(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Task</DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <Input
-              value={editedFeatureName}
-              onChange={(e) => setEditedFeatureName(e.target.value)}
-              placeholder="Edit feature/bug name..."
-              className="w-full"
-            />
-            <div className="flex flex-col gap-4">
-              <label className="text-sm font-medium flex items-center">
-                <Tag className="h-4 w-4 mr-1" />
-                Priority
-              </label>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.HIGH ? "default" : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.HIGH
-                      ? "bg-red-500 hover:bg-red-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.HIGH)}
-                >
-                  High
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.MEDIUM
-                      ? "default"
-                      : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.MEDIUM
-                      ? "bg-yellow-500 hover:bg-yellow-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.MEDIUM)}
-                >
-                  Medium
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.LOW ? "default" : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.LOW
-                      ? "bg-green-500 hover:bg-green-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.LOW)}
-                >
-                  Low
-                </Button>
-                {editedPriority && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setEditedPriority(undefined)}
-                  >
-                    No Priority
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center">
-                <Clock className="h-4 w-4 mr-1" />
-                Estimated Time
-              </label>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    value={editedHours}
-                    onChange={(e) =>
-                      setEditedHours(parseInt(e.target.value) || 0)
-                    }
-                    className="w-20"
-                  />
-                  <span className="text-sm whitespace-nowrap">hours</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={editedMinutes}
-                    onChange={(e) =>
-                      setEditedMinutes(parseInt(e.target.value) || 0)
-                    }
-                    className="w-20"
-                  />
-                  <span className="text-sm whitespace-nowrap">minutes</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingTask(null)}>
-              Cancel
-            </Button>
-            <Button onClick={saveEdit}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        mode="edit"
+        initialValues={editingTask || {}}
+        onSubmit={async (values) => {
+          if (editingTask) {
+            try {
+              const updatedTasks = await updateTaskInSupabase(
+                editingTask.id,
+                values
+              );
+              setEditingTask(null);
+              setTasks(updatedTasks);
+              toast.success("Task updated successfully", {
+                description: `"${values.featureName}" has been updated.`,
+              });
+            } catch (error) {
+              console.error("Error updating task:", error);
+              toast.error("Failed to update task");
+            }
+          }
+        }}
+        onClose={() => setEditingTask(null)}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog

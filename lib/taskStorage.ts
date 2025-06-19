@@ -425,3 +425,50 @@ export async function createTaskInSupabase(task: Task) {
     startedAt: data.started_at,
   };
 }
+
+// Update a task in Supabase
+export async function updateTaskInSupabase(
+  taskId: string,
+  updates: Partial<Task>
+): Promise<Task[]> {
+  const supabase = createClientComponentClient();
+
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    console.log("No user found");
+    return [];
+  }
+
+  // Prepare the update object for Supabase column names
+  const updateObj: any = {};
+  if (updates.featureName !== undefined)
+    updateObj.feature_name = updates.featureName;
+  if (updates.description !== undefined)
+    updateObj.description = updates.description;
+  if (updates.status !== undefined) updateObj.status = updates.status;
+  if (updates.date !== undefined) updateObj.date = updates.date;
+  if (updates.priority !== undefined) updateObj.priority = updates.priority;
+  if (updates.estimatedHours !== undefined)
+    updateObj.estimated_hours = updates.estimatedHours;
+  if (updates.estimatedMinutes !== undefined)
+    updateObj.estimated_minutes = updates.estimatedMinutes;
+  if (updates.startedAt !== undefined) updateObj.started_at = updates.startedAt;
+  if (updates.order !== undefined) updateObj.order_index = updates.order;
+
+  const { error } = await supabase
+    .from("tasks")
+    .update(updateObj)
+    .eq("id", taskId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error updating task:", error);
+    return [];
+  }
+
+  // Return the updated list of tasks
+  return await fetchTasks();
+}
