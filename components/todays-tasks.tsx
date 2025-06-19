@@ -227,7 +227,7 @@ function SortableTaskItem({
   };
 
   const startEditing = (task: Task) => {
-    setEditingTask(task);
+    setEditingTask({ ...task });
     setEditedFeatureName(task.featureName);
     setEditedDescription(task.description);
     setEditedPriority(task.priority);
@@ -462,9 +462,24 @@ function SortableTaskItem({
 
       {/* Edit Dialog */}
       <TaskFormModal
+        key={editingTask?.id}
         open={editingTask !== null}
         mode="edit"
-        initialValues={editingTask || {}}
+        initialValues={
+          editingTask
+            ? {
+                featureName: editingTask.featureName,
+                description: editingTask.description,
+                priority: editingTask.priority,
+                estimatedHours: editingTask.estimatedHours || 0,
+                estimatedMinutes: editingTask.estimatedMinutes || 0,
+                id: editingTask.id,
+                status: editingTask.status,
+                date: editingTask.date,
+                createdAt: editingTask.createdAt,
+              }
+            : {}
+        }
         onSubmit={async (values) => {
           if (editingTask) {
             try {
@@ -496,8 +511,7 @@ function SortableTaskItem({
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              task &quot;{deletingTask?.featureName} -{" "}
-              {deletingTask?.description}&quot;.
+              task &quot;{deletingTask?.featureName}&quot;.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -622,7 +636,7 @@ function KanbanTaskItem({
   };
 
   const startEditing = (task: Task) => {
-    setEditingTask(task);
+    setEditingTask({ ...task });
     setEditedFeatureName(task.featureName);
     setEditedDescription(task.description);
     setEditedPriority(task.priority);
@@ -854,9 +868,24 @@ function KanbanTaskItem({
 
       {/* Edit Dialog */}
       <TaskFormModal
+        key={editingTask?.id}
         open={editingTask !== null}
         mode="edit"
-        initialValues={editingTask || {}}
+        initialValues={
+          editingTask
+            ? {
+                featureName: editingTask.featureName,
+                description: editingTask.description,
+                priority: editingTask.priority,
+                estimatedHours: editingTask.estimatedHours || 0,
+                estimatedMinutes: editingTask.estimatedMinutes || 0,
+                id: editingTask.id,
+                status: editingTask.status,
+                date: editingTask.date,
+                createdAt: editingTask.createdAt,
+              }
+            : {}
+        }
         onSubmit={async (values) => {
           if (editingTask) {
             try {
@@ -888,8 +917,7 @@ function KanbanTaskItem({
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              task &quot;{deletingTask?.featureName} -{" "}
-              {deletingTask?.description}&quot;.
+              task &quot;{deletingTask?.featureName}&quot;.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
