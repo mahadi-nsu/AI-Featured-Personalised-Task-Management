@@ -325,13 +325,12 @@ function SortableTaskItem({
               <span className="font-medium text-base text-primary truncate">
                 {task.featureName}
               </span>
-              <span
+              <div
                 className={`text-sm text-muted-foreground ${
                   task.status === TaskStatus.DONE ? "line-through" : ""
                 }`}
-              >
-                {task.description}
-              </span>
+                dangerouslySetInnerHTML={{ __html: task.description }}
+              />
               <div className="flex flex-wrap gap-2 mt-1">
                 {task.priority && (
                   <span
@@ -517,13 +516,12 @@ function DraggedTaskItem({ task }: { task: Task }) {
             <span className="font-medium text-base text-primary">
               {task.featureName}
             </span>
-            <span
+            <div
               className={`text-sm text-muted-foreground ${
                 task.status === TaskStatus.DONE ? "line-through" : ""
               }`}
-            >
-              {task.description}
-            </span>
+              dangerouslySetInnerHTML={{ __html: task.description }}
+            />
             <div className="flex flex-wrap gap-2">
               {task.priority && (
                 <span
