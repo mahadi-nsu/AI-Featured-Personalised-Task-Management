@@ -1403,13 +1403,7 @@ export function TodaysTasks() {
               if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
                 setTasks(updatedTasks);
                 toast.success("Task status updated", {
-                  description: `"${task.featureName}" has been ${
-                    newStatus === TaskStatus.UNTOUCHED
-                      ? "marked as untouched"
-                      : newStatus === TaskStatus.IN_PROGRESS
-                      ? "moved to in progress"
-                      : "marked as completed"
-                  }.`,
+                  description: `"${task.featureName}" has been moved to ${newStatus}.`,
                 });
               } else {
                 // If update fails, fetch latest state from server
@@ -1432,58 +1426,93 @@ export function TodaysTasks() {
 
           // If dragging between different columns (status change)
           if (task.status !== overTask.status) {
-            const updatedTasks = updateTask(task.id, {
-              status: overTask.status,
-            });
-            setTasks(updatedTasks);
+            const newStatus = overTask.status;
+            // Optimistically update the UI
+            const optimisticTasks = tasks.map((t) =>
+              t.id === task.id ? { ...t, status: newStatus } : t
+            );
+            setTasks(optimisticTasks);
+
+            try {
+              const updatedTasks = await updateTaskInSupabase(task.id, {
+                status: newStatus,
+              });
+              if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
+                setTasks(updatedTasks);
+                toast.success("Task status updated", {
+                  description: `"${task.featureName}" has been moved to ${newStatus}.`,
+                });
+              } else {
+                // If update fails, fetch latest state from server
+                const latestTasks = await fetchTasks();
+                setTasks(latestTasks);
+                toast.error("Failed to update task status");
+              }
+            } catch (error) {
+              console.error("Error updating task status:", error);
+              // Fetch latest state from server
+              const latestTasks = await fetchTasks();
+              setTasks(latestTasks);
+              toast.error("Failed to update task status");
+            }
           }
           // If reordering within the same column
           else {
-            // Get tasks with the same status
-            const columnTasks = todaysTasks.filter(
-              (t) => t.status === task.status
-            );
-
-            // Find indices within the column
-            const activeIndex = columnTasks.findIndex((t) => t.id === activeId);
-            const overIndex = columnTasks.findIndex((t) => t.id === overId);
+            // Reordering within the same column
+            const activeIndex = todaysTasks.findIndex((t) => t.id === activeId);
+            const overIndex = todaysTasks.findIndex((t) => t.id === overId);
 
             if (activeIndex !== -1 && overIndex !== -1) {
-              // Get the new order using arrayMove
-              const newColumnTasks = arrayMove(
-                columnTasks,
-                activeIndex,
-                overIndex
-              );
+              const newTasks = arrayMove(todaysTasks, activeIndex, overIndex);
 
-              // Create a new array with all tasks, maintain order for other statuses
-              const reorderedTasks = [...tasks];
-
-              // Update the order of each task in the affected column
-              newColumnTasks.forEach((t, idx) => {
-                const taskIndex = reorderedTasks.findIndex(
-                  (rt) => rt.id === t.id
+              // Optimistically update the UI
+              setTasks((prevTasks) => {
+                const nonTodaysTaskIds = new Set(
+                  prevTasks
+                    .filter((p) => !todaysTasks.some((t) => t.id === p.id))
+                    .map((t) => t.id)
                 );
-                if (taskIndex !== -1) {
-                  reorderedTasks[taskIndex] = {
-                    ...reorderedTasks[taskIndex],
-                    order: idx,
-                  };
-                }
+                const nonTodaysTaskList = prevTasks.filter((t) =>
+                  nonTodaysTaskIds.has(t.id)
+                );
+                const updatedTodaysTasks = newTasks.map((t, index) => ({
+                  ...t,
+                  order: index,
+                }));
+                return [...nonTodaysTaskList, ...updatedTodaysTasks];
               });
 
-              // Get today's date in yyyy-MM-dd format
-              const today = new Date();
-              const todayStr = `${today.getFullYear()}-${String(
-                today.getMonth() + 1
-              ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+              try {
+                // Update orders in Supabase
+                const taskUpdates = newTasks.map((task, index) => ({
+                  id: task.id,
+                  order: index,
+                }));
+                const updatedTasks = await updateTasksOrderInSupabase(
+                  taskUpdates
+                );
 
-              // Update the order in storage
-              const updatedTasks = updateTaskOrder(
-                todayStr,
-                reorderedTasks.map((t) => t.id)
-              );
-              setTasks(updatedTasks);
+                if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
+                  setTasks(updatedTasks); // Set the final state from DB
+                } else {
+                  throw new Error("Invalid response from server");
+                }
+              } catch (error) {
+                console.error("Error updating task order:", error);
+                // Revert on error
+                setTasks((prevTasks) => {
+                  const nonTodaysTaskIds = new Set(
+                    prevTasks
+                      .filter((p) => !todaysTasks.some((t) => t.id === p.id))
+                      .map((t) => t.id)
+                  );
+                  const nonTodaysTaskList = prevTasks.filter((t) =>
+                    nonTodaysTaskIds.has(t.id)
+                  );
+                  return [...nonTodaysTaskList, ...todaysTasks];
+                });
+                toast.error("Failed to update task order");
+              }
             }
           }
         }
