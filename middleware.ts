@@ -3,6 +3,19 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // Skip static files (e.g., /todos.jpg), _next, api, favicon.ico, auth/callback
+  if (
+    /^\/[^/]+\.[^/]+$/.test(pathname) || // matches /file.ext at root
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname === "/favicon.ico" ||
+    pathname.startsWith("/auth/callback")
+  ) {
+    return NextResponse.next();
+  }
+
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
 
@@ -11,12 +24,12 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getSession();
 
   // If the user is not signed in and not on the login page, redirect them to login.
-  if (!session && req.nextUrl.pathname !== "/auth/login") {
+  if (!session && pathname !== "/auth/login") {
     return NextResponse.redirect(new URL("/auth/login", req.url));
   }
 
   // If the user is signed in and on the login page, redirect them to the home page.
-  if (session && req.nextUrl.pathname === "/auth/login") {
+  if (session && pathname === "/auth/login") {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
@@ -24,15 +37,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - api/ (api routes)
-     * - auth/callback (Supabase auth callback)
-     */
-    "/((?!_next/static|_next/image|favicon.ico|api|auth/callback).*)",
-  ],
+  matcher: ["/:path*"],
 };

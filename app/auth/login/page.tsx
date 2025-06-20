@@ -28,14 +28,15 @@ export default function LoginPage() {
           <div className="space-y-6 flex-1 flex flex-col justify-center">
             {/* Illustration */}
             <Image
-              src="/images/productivity.png"
+              src="/productivity.png"
               alt="Productivity Illustration"
               width={350}
               height={220}
               className="w-full max-w-xs mx-auto mb-8 drop-shadow-2xl animate-float"
-              style={{ minHeight: 180 }}
+              // style={{ minHeight: 180, height: 350, width: 550 }}
               priority
             />
+
             <h1 className="text-4xl font-extrabold text-white mb-2 drop-shadow-lg">
               Supercharge your productivity and land your dream job.
             </h1>
