@@ -3,13 +3,13 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
-import { NavLinks } from "@/components/nav-links";
+import { ConditionalNav } from "@/components/conditional-nav";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Task Management App",
-  description: "A simple task management application",
+  description: "A comprehensive task management solution.",
 };
 
 export default function RootLayout({
@@ -26,15 +26,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <nav className="bg-gray-900 text-white">
-            <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-              <div className="text-lg font-semibold">Task Management</div>
-              <NavLinks />
-            </div>
-          </nav>
+          <ConditionalNav />
           <main className="container mx-auto px-4 py-6">{children}</main>
+          <Toaster />
         </ThemeProvider>
-        <Toaster />
       </body>
     </html>
   );
