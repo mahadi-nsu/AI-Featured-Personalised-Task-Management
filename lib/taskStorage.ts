@@ -506,3 +506,42 @@ export async function updateTasksOrderInSupabase(
     return [];
   }
 }
+
+// Fetch all completed tasks from Supabase
+export async function fetchCompletedTasks(): Promise<Task[]> {
+  const supabase = createClientComponentClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    console.log("No user found");
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("status", TaskStatus.DONE)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching completed tasks:", error);
+    return [];
+  }
+
+  return data.map((task) => ({
+    id: task.id,
+    featureName: task.feature_name,
+    description: task.description,
+    status: task.status as TaskStatus,
+    date: task.date,
+    createdAt: task.created_at,
+    order: task.order_index,
+    priority: task.priority,
+    estimatedHours: task.estimated_hours,
+    estimatedMinutes: task.estimated_minutes,
+    startedAt: task.started_at,
+  }));
+}

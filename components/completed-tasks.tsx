@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Task, TaskStatus } from "@/lib/utils";
-import { loadTasks } from "@/lib/taskStorage";
-import { Tag, Clock, Loader2 } from "lucide-react";
+import { fetchCompletedTasks } from "@/lib/taskStorage";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface CompletedTasksProps {
-  selectedDate?: Date;
+  selectedDate: Date;
   onGenerateTest: (
     featureName: string,
     description: string,
@@ -25,48 +25,64 @@ export function CompletedTasks({
   loadedTaskId,
   isLoading,
 }: CompletedTasksProps) {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [allCompleted, setAllCompleted] = useState<Task[]>([]);
+  const [isFetching, setIsFetching] = useState(true);
 
   useEffect(() => {
-    const loadedTasks = loadTasks();
-    const completedTasks = loadedTasks.filter((task) => {
-      // First filter for completed tasks
-      if (task.status !== TaskStatus.DONE) return false;
-
-      // If selectedDate is provided, filter by date
-      if (selectedDate && task.date) {
-        const taskDate = new Date(task.date);
-        return (
-          taskDate.getDate() === selectedDate.getDate() &&
-          taskDate.getMonth() === selectedDate.getMonth() &&
-          taskDate.getFullYear() === selectedDate.getFullYear()
-        );
+    const getCompletedTasks = async () => {
+      setIsFetching(true);
+      try {
+        const completed = await fetchCompletedTasks();
+        setAllCompleted(completed);
+      } catch (error) {
+        console.error("Failed to fetch completed tasks", error);
+        toast.error("Could not load completed tasks.");
+      } finally {
+        setIsFetching(false);
       }
+    };
+    getCompletedTasks();
+  }, []);
 
-      // If no selectedDate, show all completed tasks
-      return true;
-    });
-    setTasks(completedTasks);
-  }, [selectedDate]);
+  const tasks = allCompleted.filter((task) => {
+    if (!task.date) return false;
+    const taskDate = new Date(task.date);
+    return (
+      taskDate.getDate() === selectedDate.getDate() &&
+      taskDate.getMonth() === selectedDate.getMonth() &&
+      taskDate.getFullYear() === selectedDate.getFullYear()
+    );
+  });
+
+  if (isFetching) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {tasks.length === 0 ? (
-        <Card className="p-4">
-          <p className="text-muted-foreground">No completed tasks yet.</p>
+        <Card className="p-4 border-dashed">
+          <p className="text-center text-muted-foreground">
+            No completed tasks for this date.
+          </p>
         </Card>
       ) : (
         tasks.map((task) => (
-          <Card key={task.id} className="p-4">
-            <div className="flex flex-col gap-1">
-              <span className="font-medium text-base text-primary line-through">
+          <Card key={task.id} className="p-4 shadow-sm">
+            <div className="flex flex-col gap-2">
+              <span className="font-medium text-base text-primary">
                 {task.featureName}
               </span>
-              <span className="text-sm text-muted-foreground line-through mb-3">
-                {task.description}
-              </span>
+              <div
+                className="text-sm text-muted-foreground prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: task.description }}
+              />
               <Button
-                className="w-full"
+                className="w-full mt-3"
                 variant={loadedTaskId === task.id ? "default" : "outline"}
                 onClick={() =>
                   onGenerateTest(task.featureName, task.description, task.id)
@@ -79,7 +95,7 @@ export function CompletedTasks({
                     Generating...
                   </>
                 ) : loadedTaskId === task.id ? (
-                  "Data Fetched!"
+                  "Test Cases Loaded!"
                 ) : (
                   "Generate AI Test Case"
                 )}
