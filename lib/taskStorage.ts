@@ -472,3 +472,37 @@ export async function updateTaskInSupabase(
   // Return the updated list of tasks
   return await fetchTasks();
 }
+
+// Update multiple tasks' order in Supabase
+export async function updateTasksOrderInSupabase(
+  tasks: { id: string; order: number }[]
+): Promise<Task[]> {
+  const supabase = createClientComponentClient();
+
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    console.log("No user found");
+    return [];
+  }
+
+  // Update each task's order
+  const promises = tasks.map(({ id, order }) =>
+    supabase
+      .from("tasks")
+      .update({ order_index: order })
+      .eq("id", id)
+      .eq("user_id", user.id)
+  );
+
+  try {
+    await Promise.all(promises);
+    // Fetch and return the updated tasks
+    return await fetchTasks();
+  } catch (error) {
+    console.error("Error updating task orders:", error);
+    return [];
+  }
+}

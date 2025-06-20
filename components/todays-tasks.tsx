@@ -52,6 +52,7 @@ import {
   updateTaskOrder,
   fetchTasks,
   updateTaskInSupabase,
+  updateTasksOrderInSupabase,
 } from "@/lib/taskStorage";
 import {
   DndContext,
@@ -191,19 +192,40 @@ function SortableTaskItem({
     return parts.join(" ");
   };
 
-  const updateTaskStatus = (task: Task, status: TaskStatus) => {
-    const updatedTasks = updateTask(task.id, { status });
-    setTasks(updatedTasks);
+  const updateTaskStatus = async (task: Task, status: TaskStatus) => {
+    // Optimistically update the UI
+    const optimisticTasks = tasks.map((t) =>
+      t.id === task.id ? { ...t, status } : t
+    );
+    setTasks(optimisticTasks);
 
-    const statusMessages = {
-      [TaskStatus.UNTOUCHED]: "marked as untouched",
-      [TaskStatus.IN_PROGRESS]: "moved to in progress",
-      [TaskStatus.DONE]: "marked as completed",
-    };
+    try {
+      const updatedTasks = await updateTaskInSupabase(task.id, { status });
 
-    toast.success("Task status updated", {
-      description: `"${task.featureName}" has been ${statusMessages[status]}.`,
-    });
+      if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
+        setTasks(updatedTasks);
+        toast.success("Task status updated", {
+          description: `"${task.featureName}" has been ${
+            status === TaskStatus.UNTOUCHED
+              ? "marked as untouched"
+              : status === TaskStatus.IN_PROGRESS
+              ? "moved to in progress"
+              : "marked as completed"
+          }.`,
+        });
+      } else {
+        // If update fails, fetch latest state from server
+        const latestTasks = await fetchTasks();
+        setTasks(latestTasks);
+        toast.error("Failed to update task status");
+      }
+    } catch (error) {
+      console.error("Error updating task status:", error);
+      // Fetch latest state from server
+      const latestTasks = await fetchTasks();
+      setTasks(latestTasks);
+      toast.error("Failed to update task status");
+    }
   };
 
   const startDelete = (task: Task) => {
@@ -420,8 +442,8 @@ function SortableTaskItem({
             <div className="flex items-center gap-2">
               <Select
                 value={task.status}
-                onValueChange={(value) =>
-                  updateTaskStatus(task, value as TaskStatus)
+                onValueChange={async (value) =>
+                  await updateTaskStatus(task, value as TaskStatus)
                 }
               >
                 <SelectTrigger
@@ -600,19 +622,40 @@ function KanbanTaskItem({
     return parts.join(" ");
   };
 
-  const updateTaskStatus = (task: Task, status: TaskStatus) => {
-    const updatedTasks = updateTask(task.id, { status });
-    setTasks(updatedTasks);
+  const updateTaskStatus = async (task: Task, status: TaskStatus) => {
+    // Optimistically update the UI
+    const optimisticTasks = tasks.map((t) =>
+      t.id === task.id ? { ...t, status } : t
+    );
+    setTasks(optimisticTasks);
 
-    const statusMessages = {
-      [TaskStatus.UNTOUCHED]: "marked as untouched",
-      [TaskStatus.IN_PROGRESS]: "moved to in progress",
-      [TaskStatus.DONE]: "marked as completed",
-    };
+    try {
+      const updatedTasks = await updateTaskInSupabase(task.id, { status });
 
-    toast.success("Task status updated", {
-      description: `"${task.featureName}" has been ${statusMessages[status]}.`,
-    });
+      if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
+        setTasks(updatedTasks);
+        toast.success("Task status updated", {
+          description: `"${task.featureName}" has been ${
+            status === TaskStatus.UNTOUCHED
+              ? "marked as untouched"
+              : status === TaskStatus.IN_PROGRESS
+              ? "moved to in progress"
+              : "marked as completed"
+          }.`,
+        });
+      } else {
+        // If update fails, fetch latest state from server
+        const latestTasks = await fetchTasks();
+        setTasks(latestTasks);
+        toast.error("Failed to update task status");
+      }
+    } catch (error) {
+      console.error("Error updating task status:", error);
+      // Fetch latest state from server
+      const latestTasks = await fetchTasks();
+      setTasks(latestTasks);
+      toast.error("Failed to update task status");
+    }
   };
 
   const startDelete = (task: Task) => {
@@ -824,8 +867,8 @@ function KanbanTaskItem({
                 <div className="flex items-center gap-2">
                   <Select
                     value={task.status}
-                    onValueChange={(value) =>
-                      updateTaskStatus(task, value as TaskStatus)
+                    onValueChange={async (value) =>
+                      await updateTaskStatus(task, value as TaskStatus)
                     }
                   >
                     <SelectTrigger
@@ -1243,7 +1286,7 @@ export function TodaysTasks() {
   };
 
   // Handle drag end for list view
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
     setActiveTask(null);
@@ -1254,8 +1297,6 @@ export function TodaysTasks() {
       const activeId = String(active.id);
       const overId = String(over.id);
 
-      console.log(`Drag ended: ${activeId} over ${overId}`);
-
       // Handle list mode drag end
       if (viewMode === "list") {
         // Find the tasks in the array
@@ -1265,19 +1306,48 @@ export function TodaysTasks() {
         const overIndex = todaysTasks.findIndex((task) => task.id === overId);
 
         if (activeIndex !== -1 && overIndex !== -1) {
-          // Get the new order of task IDs
+          // Get the new order of tasks
           const newTasks = arrayMove(todaysTasks, activeIndex, overIndex);
-          const newTaskIds = newTasks.map((task) => task.id);
 
-          // Get today's date in yyyy-MM-dd format
-          const today = new Date();
-          const todayStr = `${today.getFullYear()}-${String(
-            today.getMonth() + 1
-          ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+          // Optimistically update the UI
+          setTasks((prevTasks) => {
+            const updatedTasks = [...prevTasks];
+            // Update order for all tasks in the same date group
+            newTasks.forEach((task, index) => {
+              const taskIndex = updatedTasks.findIndex((t) => t.id === task.id);
+              if (taskIndex !== -1) {
+                updatedTasks[taskIndex] = {
+                  ...updatedTasks[taskIndex],
+                  order: index,
+                };
+              }
+            });
+            return updatedTasks;
+          });
 
-          // Update the order in storage
-          const updatedTasks = updateTaskOrder(todayStr, newTaskIds);
-          setTasks(updatedTasks);
+          try {
+            // Update orders in Supabase
+            const taskUpdates = newTasks.map((task, index) => ({
+              id: task.id,
+              order: index,
+            }));
+            const updatedTasks = await updateTasksOrderInSupabase(taskUpdates);
+
+            if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
+              setTasks(updatedTasks);
+            } else {
+              // If update fails, fetch latest state from server
+              const latestTasks = await fetchTasks();
+              setTasks(latestTasks);
+              toast.error("Failed to update task order");
+            }
+          } catch (error) {
+            console.error("Error updating task order:", error);
+            // Fetch latest state from server
+            const latestTasks = await fetchTasks();
+            setTasks(latestTasks);
+            toast.error("Failed to update task order");
+          }
         }
       }
       // Handle kanban mode drag end
@@ -1304,8 +1374,40 @@ export function TodaysTasks() {
 
           // If status has changed, update it
           if (task.status !== newStatus) {
-            const updatedTasks = updateTask(task.id, { status: newStatus });
-            setTasks(updatedTasks);
+            // Optimistically update the UI
+            const optimisticTasks = tasks.map((t) =>
+              t.id === task.id ? { ...t, status: newStatus } : t
+            );
+            setTasks(optimisticTasks);
+
+            try {
+              const updatedTasks = await updateTaskInSupabase(task.id, {
+                status: newStatus,
+              });
+              if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
+                setTasks(updatedTasks);
+                toast.success("Task status updated", {
+                  description: `"${task.featureName}" has been ${
+                    newStatus === TaskStatus.UNTOUCHED
+                      ? "marked as untouched"
+                      : newStatus === TaskStatus.IN_PROGRESS
+                      ? "moved to in progress"
+                      : "marked as completed"
+                  }.`,
+                });
+              } else {
+                // If update fails, fetch latest state from server
+                const latestTasks = await fetchTasks();
+                setTasks(latestTasks);
+                toast.error("Failed to update task status");
+              }
+            } catch (error) {
+              console.error("Error updating task status:", error);
+              // Fetch latest state from server
+              const latestTasks = await fetchTasks();
+              setTasks(latestTasks);
+              toast.error("Failed to update task status");
+            }
           }
         } else {
           // Dragging over another task
