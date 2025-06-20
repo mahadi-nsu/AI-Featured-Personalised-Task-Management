@@ -1494,7 +1494,7 @@ export function TodaysTasks() {
   return (
     <>
       <div className="w-full mx-auto p-6 space-y-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
           <div className="flex items-center text-sm relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/10 rounded-full blur-sm group-hover:from-primary/30 group-hover:to-primary/20 transition-all duration-300"></div>
             <div className="relative flex items-center bg-background/80 backdrop-blur-sm px-4 py-2 rounded-full border border-primary/20 group-hover:border-primary/30 transition-all duration-300">
