@@ -284,10 +284,18 @@ function SortableTaskItem({
     if (task.status === TaskStatus.IN_PROGRESS) {
       // Set start time if not already set
       if (!task.startedAt) {
-        const updatedTasks = updateTask(task.id, {
-          startedAt: new Date().toISOString(),
-        });
-        setTasks(updatedTasks);
+        const setStartTime = async () => {
+          try {
+            const updatedTasks = await updateTaskInSupabase(task.id, {
+              startedAt: new Date().toISOString(),
+            });
+            setTasks(updatedTasks);
+          } catch (error) {
+            console.error("Failed to set task start time:", error);
+            toast.error("Failed to start timer for task");
+          }
+        };
+        setStartTime();
       }
 
       // Check initial remaining time and play sound if needed
@@ -714,10 +722,18 @@ function KanbanTaskItem({
     if (task.status === TaskStatus.IN_PROGRESS) {
       // Set start time if not already set
       if (!task.startedAt) {
-        const updatedTasks = updateTask(task.id, {
-          startedAt: new Date().toISOString(),
-        });
-        setTasks(updatedTasks);
+        const setStartTime = async () => {
+          try {
+            const updatedTasks = await updateTaskInSupabase(task.id, {
+              startedAt: new Date().toISOString(),
+            });
+            setTasks(updatedTasks);
+          } catch (error) {
+            console.error("Failed to set task start time:", error);
+            toast.error("Failed to start timer for task");
+          }
+        };
+        setStartTime();
       }
 
       // Check initial remaining time and play sound if needed
