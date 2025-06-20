@@ -49,12 +49,10 @@ import {
 import { Task, TaskStatus, TaskPriority } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import {
-  loadTasks,
-  saveTasks,
-  addTask,
-  updateTask,
+  fetchTasks,
+  updateTaskInSupabase,
   deleteTask,
-  updateTaskOrder,
+  updateTasksOrderInSupabase,
 } from "@/lib/taskStorage";
 import {
   DndContext,
@@ -77,6 +75,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import { CreateTaskModal } from "@/components/create-task-modal";
+import { TaskFormModal } from "@/components/task-form-modal";
 
 // Date Tasks Component
 // This component manages tasks for specific dates with drag and drop functionality.
@@ -149,13 +148,6 @@ function SortableTaskItem({
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
-  const [editedFeatureName, setEditedFeatureName] = useState("");
-  const [editedDescription, setEditedDescription] = useState("");
-  const [editedPriority, setEditedPriority] = useState<
-    TaskPriority | undefined
-  >(undefined);
-  const [editedHours, setEditedHours] = useState(0);
-  const [editedMinutes, setEditedMinutes] = useState(0);
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -170,9 +162,37 @@ function SortableTaskItem({
     }
   };
 
-  const updateTaskStatus = (task: Task, status: TaskStatus) => {
-    const updatedTasks = updateTask(task.id, { status });
-    setTasks(updatedTasks);
+  const updateTaskStatus = async (task: Task, status: TaskStatus) => {
+    // Optimistically update the UI
+    const optimisticTasks = tasks.map((t) =>
+      t.id === task.id ? { ...t, status } : t
+    );
+    setTasks(optimisticTasks);
+
+    try {
+      const updatedTasks = await updateTaskInSupabase(task.id, { status });
+      if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
+        setTasks(updatedTasks);
+        toast.success("Task status updated", {
+          description: `"${task.featureName}" has been ${
+            status === TaskStatus.UNTOUCHED
+              ? "marked as untouched"
+              : status === TaskStatus.IN_PROGRESS
+              ? "moved to in progress"
+              : "marked as completed"
+          }.`,
+        });
+      } else {
+        const latestTasks = await fetchTasks();
+        setTasks(latestTasks);
+        toast.error("Failed to update task status");
+      }
+    } catch (error) {
+      console.error("Error updating task status:", error);
+      const latestTasks = await fetchTasks();
+      setTasks(latestTasks);
+      toast.error("Failed to update task status");
+    }
   };
 
   const startDelete = (task: Task) => {
@@ -198,31 +218,7 @@ function SortableTaskItem({
   };
 
   const startEditing = (task: Task) => {
-    setEditingTask(task);
-    setEditedFeatureName(task.featureName);
-    setEditedDescription(task.description);
-    setEditedPriority(task.priority);
-    setEditedHours(task.estimatedHours || 0);
-    setEditedMinutes(task.estimatedMinutes || 0);
-  };
-
-  const saveEdit = () => {
-    if (editingTask && editedFeatureName.trim() && editedDescription.trim()) {
-      const updatedTasks = updateTask(editingTask.id, {
-        featureName: editedFeatureName.trim(),
-        description: editedDescription.trim(),
-        priority: editedPriority,
-        estimatedHours: editedHours || undefined,
-        estimatedMinutes: editedMinutes || undefined,
-      });
-      setEditingTask(null);
-      setTasks(updatedTasks);
-
-      // Show success toast
-      toast.success("Task updated successfully", {
-        description: `"${editedFeatureName}" has been updated.`,
-      });
-    }
+    setEditingTask({ ...task });
   };
 
   // Get priority badge color
@@ -253,10 +249,18 @@ function SortableTaskItem({
     if (task.status === TaskStatus.IN_PROGRESS) {
       // Set start time if not already set
       if (!task.startedAt) {
-        const updatedTasks = updateTask(task.id, {
-          startedAt: new Date().toISOString(),
-        });
-        setTasks(updatedTasks);
+        const setStartTime = async () => {
+          try {
+            const updatedTasks = await updateTaskInSupabase(task.id, {
+              startedAt: new Date().toISOString(),
+            });
+            setTasks(updatedTasks);
+          } catch (error) {
+            console.error("Failed to set task start time:", error);
+            toast.error("Failed to start timer for task");
+          }
+        };
+        setStartTime();
       }
 
       // Start countdown
@@ -369,8 +373,8 @@ function SortableTaskItem({
             <div className="flex items-center gap-2">
               <Select
                 value={task.status}
-                onValueChange={(value) =>
-                  updateTaskStatus(task, value as TaskStatus)
+                onValueChange={async (value) =>
+                  await updateTaskStatus(task, value as TaskStatus)
                 }
               >
                 <SelectTrigger
@@ -410,136 +414,45 @@ function SortableTaskItem({
       </div>
 
       {/* Edit Dialog */}
-      <Dialog
+      <TaskFormModal
+        key={editingTask?.id}
         open={editingTask !== null}
-        onOpenChange={() => setEditingTask(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Task</DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <Input
-              value={editedFeatureName}
-              onChange={(e) => setEditedFeatureName(e.target.value)}
-              placeholder="Edit feature/bug name..."
-              className="w-full"
-            />
-            <Textarea
-              value={editedDescription}
-              onChange={(e) => setEditedDescription(e.target.value)}
-              placeholder="Edit description..."
-              className="w-full min-h-[100px]"
-            />
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center">
-                <Tag className="h-4 w-4 mr-1" />
-                Priority
-              </label>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.HIGH ? "default" : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.HIGH
-                      ? "bg-red-500 hover:bg-red-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.HIGH)}
-                >
-                  High
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.MEDIUM
-                      ? "default"
-                      : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.MEDIUM
-                      ? "bg-yellow-500 hover:bg-yellow-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.MEDIUM)}
-                >
-                  Medium
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.LOW ? "default" : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.LOW
-                      ? "bg-green-500 hover:bg-green-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.LOW)}
-                >
-                  Low
-                </Button>
-                {editedPriority && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setEditedPriority(undefined)}
-                  >
-                    No Priority
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center">
-                <Clock className="h-4 w-4 mr-1" />
-                Estimated Time
-              </label>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    value={editedHours}
-                    onChange={(e) =>
-                      setEditedHours(parseInt(e.target.value) || 0)
-                    }
-                    className="w-20"
-                  />
-                  <span className="text-sm whitespace-nowrap">hours</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={editedMinutes}
-                    onChange={(e) =>
-                      setEditedMinutes(parseInt(e.target.value) || 0)
-                    }
-                    className="w-20"
-                  />
-                  <span className="text-sm whitespace-nowrap">minutes</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingTask(null)}>
-              Cancel
-            </Button>
-            <Button onClick={saveEdit}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        mode="edit"
+        initialValues={
+          editingTask
+            ? {
+                featureName: editingTask.featureName,
+                description: editingTask.description,
+                priority: editingTask.priority,
+                estimatedHours: editingTask.estimatedHours || 0,
+                estimatedMinutes: editingTask.estimatedMinutes || 0,
+                id: editingTask.id,
+                status: editingTask.status,
+                date: editingTask.date,
+                createdAt: editingTask.createdAt,
+              }
+            : {}
+        }
+        onSubmit={async (values) => {
+          if (editingTask) {
+            try {
+              const updatedTasks = await updateTaskInSupabase(
+                editingTask.id,
+                values
+              );
+              setEditingTask(null);
+              setTasks(updatedTasks);
+              toast.success("Task updated successfully", {
+                description: `"${values.featureName}" has been updated.`,
+              });
+            } catch (error) {
+              console.error("Error updating task:", error);
+              toast.error("Failed to update task");
+            }
+          }
+        }}
+        onClose={() => setEditingTask(null)}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog
@@ -639,15 +552,9 @@ function DraggedTaskItem({ task }: { task: Task }) {
 export function DateTasks() {
   const [date, setDate] = useState<Date>(new Date());
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [priority, setPriority] = useState<TaskPriority | undefined>(undefined);
-  const [estimatedHours, setEstimatedHours] = useState<number>(0);
-  const [estimatedMinutes, setEstimatedMinutes] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const { register, handleSubmit, reset } = useForm<{
-    featureName: string;
-    description: string;
-  }>();
 
   // Setup sensors for drag and drop
   const sensors = useSensors(
@@ -663,9 +570,19 @@ export function DateTasks() {
 
   // Load tasks on component mount
   useEffect(() => {
-    const loadedTasks = loadTasks();
-    console.log("DateTasks - Loaded tasks:", loadedTasks);
-    setTasks(loadedTasks);
+    const loadInitialTasks = async () => {
+      setIsLoading(true);
+      try {
+        const loadedTasks = await fetchTasks();
+        setTasks(loadedTasks);
+      } catch (error) {
+        console.error("Error loading tasks:", error);
+        toast.error("Failed to load tasks.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadInitialTasks();
   }, []);
 
   // Get tasks for selected date
@@ -705,40 +622,6 @@ export function DateTasks() {
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
 
-  const createTask = (data: { featureName: string; description: string }) => {
-    // Format the date consistently
-    const formattedDate = format(date, "yyyy-MM-dd");
-
-    const newTask: Task = {
-      id: crypto.randomUUID(),
-      featureName: data.featureName,
-      description: data.description,
-      status: TaskStatus.UNTOUCHED,
-      date: formattedDate,
-      createdAt: new Date().toISOString(),
-      priority: priority,
-      estimatedHours: estimatedHours || undefined,
-      estimatedMinutes: estimatedMinutes || undefined,
-    };
-
-    console.log("Creating new task:", newTask);
-
-    // Use the centralized storage
-    const updatedTasks = addTask(newTask);
-    setTasks(updatedTasks);
-
-    // Show success toast
-    toast.success("Task created successfully", {
-      description: `"${data.featureName}" has been added to your task list.`,
-    });
-
-    // Reset form
-    reset();
-    setPriority(undefined);
-    setEstimatedHours(0);
-    setEstimatedMinutes(0);
-  };
-
   // Handle drag start
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -753,7 +636,7 @@ export function DateTasks() {
   };
 
   // Handle drag end event
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
     setActiveTask(null);
@@ -769,16 +652,44 @@ export function DateTasks() {
       const overIndex = dateTasksOnly.findIndex((task) => task.id === overId);
 
       if (activeIndex !== -1 && overIndex !== -1) {
-        // Get the new order of task IDs
+        // Get the new order of tasks
         const newTasks = arrayMove(dateTasksOnly, activeIndex, overIndex);
-        const newTaskIds = newTasks.map((task) => task.id);
 
-        // Get selected date in yyyy-MM-dd format
-        const formattedDate = format(date, "yyyy-MM-dd");
+        // Optimistically update the UI
+        setTasks((prevTasks) => {
+          const updatedTasks = [...prevTasks];
+          newTasks.forEach((task, index) => {
+            const taskIndex = updatedTasks.findIndex((t) => t.id === task.id);
+            if (taskIndex !== -1) {
+              updatedTasks[taskIndex] = {
+                ...updatedTasks[taskIndex],
+                order: index,
+              };
+            }
+          });
+          return updatedTasks.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        });
 
-        // Update the order in storage
-        const updatedTasks = updateTaskOrder(formattedDate, newTaskIds);
-        setTasks(updatedTasks);
+        try {
+          const taskUpdates = newTasks.map((task, index) => ({
+            id: task.id,
+            order: index,
+          }));
+          const updatedTasks = await updateTasksOrderInSupabase(taskUpdates);
+
+          if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
+            setTasks(updatedTasks);
+          } else {
+            const latestTasks = await fetchTasks();
+            setTasks(latestTasks);
+            toast.error("Failed to update task order");
+          }
+        } catch (error) {
+          console.error("Error updating task order:", error);
+          const latestTasks = await fetchTasks();
+          setTasks(latestTasks);
+          toast.error("Failed to update task order");
+        }
       }
     }
   };
@@ -819,7 +730,11 @@ export function DateTasks() {
         </div>
 
         <div className="space-y-4">
-          {dateTasksOnly.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Loading tasks...
+            </div>
+          ) : dateTasksOnly.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               No tasks for {format(date, "MMMM d, yyyy")}. Add one to get
               started!
