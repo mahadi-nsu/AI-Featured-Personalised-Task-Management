@@ -109,7 +109,7 @@ export function NavLinks() {
               Job-hunt
             </Link>
 
-            <Link
+            {/* <Link
               href="/debug"
               className={`hover:text-gray-300 transition-colors ${
                 pathname === "/debug"
@@ -118,7 +118,7 @@ export function NavLinks() {
               }`}
             >
               Backend/Localstorage
-            </Link>
+            </Link> */}
             <ThemeToggle />
 
             {user ? (
@@ -228,7 +228,7 @@ export function NavLinks() {
             Routines
           </Link>
 
-          <Link
+          {/* <Link
             href="/debug"
             className={`text-2xl hover:text-gray-300 transition-colors ${
               pathname === "/debug"
@@ -238,7 +238,7 @@ export function NavLinks() {
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Backend/Localstorage
-          </Link>
+          </Link> */}
           <ThemeToggle />
 
           {user ? (
