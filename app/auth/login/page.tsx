@@ -21,11 +21,11 @@ export default function LoginPage() {
     <div className="h-[90vh] w-full overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-gray-900 text-foreground rounded-2xl">
       <div className="grid md:grid-cols-2 h-full items-stretch">
         {/* Left: Illustration & App Info */}
-        <div className="hidden md:flex flex-col justify-between p-6 bg-gradient-to-br from-red-800 via-purple-900 to-blue-900 relative">
+        <div className="hidden md:flex flex-col justify-around p-6 bg-gradient-to-br from-red-800 via-purple-900 to-blue-900 relative">
           <div className="text-2xl font-bold text-white drop-shadow-lg">
             Task Management
           </div>
-          <div className="space-y-6 flex-1 flex flex-col justify-center">
+          <div className="space-y-6 flex-1 flex flex-col justify-start mt-16">
             {/* Illustration */}
             <Image
               src="/productivity_2.png"
