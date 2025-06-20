@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon } from "lucide-react";
+import { Loader2, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import {
   Popover,
@@ -25,17 +25,30 @@ import {
   RadialBarChart,
   RadialBar,
 } from "recharts";
-import { loadTasks } from "@/lib/taskStorage";
+import { fetchTasks } from "@/lib/taskStorage";
 import { Task, TaskStatus, TaskPriority } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function AnalyticsPage() {
   const [date, setDate] = useState<Date>(new Date());
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadedTasks = loadTasks();
-    setTasks(loadedTasks);
+    const getTasks = async () => {
+      setIsLoading(true);
+      try {
+        const loadedTasks = await fetchTasks();
+        setTasks(loadedTasks);
+      } catch (error) {
+        console.error("Error loading tasks:", error);
+        toast.error("Could not load tasks for analytics.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    getTasks();
   }, []);
 
   // Filter tasks for selected date
@@ -168,6 +181,17 @@ export default function AnalyticsPage() {
       fill: COLORS.done,
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading analytics...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full mx-auto p-6 space-y-8">
