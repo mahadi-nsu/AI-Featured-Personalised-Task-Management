@@ -2,7 +2,7 @@
 
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Zap, Briefcase } from "lucide-react";
+import { CheckCircle, Zap, Briefcase, BarChart2, Repeat } from "lucide-react";
 
 export default function LoginPage() {
   const supabase = createClientComponentClient();
@@ -90,6 +90,26 @@ export default function LoginPage() {
                   </span>{" "}
                   Generate test cases and get smart suggestions to optimize your
                   workflow.
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <BarChart2 className="h-5 w-5 mt-1 text-primary" />
+                <p>
+                  <span className="font-semibold text-foreground">
+                    Analytics Dashboard:
+                  </span>{" "}
+                  Visualize your productivity trends and task completion rates
+                  with interactive charts.
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Repeat className="h-5 w-5 mt-1 text-primary" />
+                <p>
+                  <span className="font-semibold text-foreground">
+                    Routine Management:
+                  </span>{" "}
+                  Build and track daily routines to develop productive habits
+                  and stay consistent.
                 </p>
               </div>
               <div className="flex items-start gap-3">
