@@ -18,26 +18,26 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="h-screen w-full overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-gray-900 text-foreground">
+    <div className="h-[90vh] w-full overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-gray-900 text-foreground rounded-2xl">
       <div className="grid md:grid-cols-2 h-full items-stretch">
         {/* Left: Illustration & App Info */}
-        <div className="hidden md:flex flex-col justify-between p-12 bg-gradient-to-br from-red-800 via-purple-900 to-blue-900 relative">
+        <div className="hidden md:flex flex-col justify-between p-6 bg-gradient-to-br from-red-800 via-purple-900 to-blue-900 relative">
           <div className="text-2xl font-bold text-white drop-shadow-lg">
             Task Management
           </div>
           <div className="space-y-6 flex-1 flex flex-col justify-center">
             {/* Illustration */}
             <Image
-              src="/productivity.png"
+              src="/productivity_2.png"
               alt="Productivity Illustration"
               width={350}
               height={220}
-              className="w-full max-w-xs mx-auto mb-8 drop-shadow-2xl animate-float"
-              // style={{ minHeight: 180, height: 350, width: 550 }}
+              className="w-full max-w-xs mx-auto mb-4 drop-shadow-2xl animate-float"
+              style={{ minHeight: 180, height: 280 }}
               priority
             />
 
-            <h1 className="text-4xl font-extrabold text-white mb-2 drop-shadow-lg">
+            <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow-lg">
               Supercharge your productivity and land your dream job.
             </h1>
             <p className="text-lg text-slate-200 mb-4">
@@ -58,7 +58,7 @@ export default function LoginPage() {
                 Welcome to your new productivity hub.
               </p>
             </div>
-            <div className="p-8 rounded-2xl shadow-2xl bg-gradient-to-br from-white/80 via-slate-100/80 to-slate-200/80 dark:from-slate-900/80 dark:via-slate-800/80 dark:to-slate-900/80 border border-slate-200 dark:border-slate-800 relative animate-fade-in">
+            <div className="p-6 rounded-2xl shadow-2xl bg-gradient-to-br from-white/80 via-slate-100/80 to-slate-200/80 dark:from-slate-900/80 dark:via-slate-800/80 dark:to-slate-900/80 border border-slate-200 dark:border-slate-800 relative animate-fade-in">
               <h2 className="text-2xl font-semibold text-center mb-6 text-primary drop-shadow-sm">
                 Sign in to continue
               </h2>
@@ -90,7 +90,7 @@ export default function LoginPage() {
             </div>
             <div className="space-y-4 bg-gradient-to-br from-purple-100/60 via-blue-100/60 to-white/60 dark:from-purple-900/40 dark:via-blue-900/40 dark:to-slate-900/40 rounded-xl p-6 shadow-inner animate-fade-in-slow">
               <div className="flex items-start gap-3">
-                <CheckCircle className="h-5 w-5 mt-1 text-primary" />
+                <CheckCircle className="h-10 w-10 mt-1 text-primary" />
                 <p>
                   <span className="font-semibold text-foreground">
                     Seamless Task Management:
@@ -99,7 +99,7 @@ export default function LoginPage() {
                 </p>
               </div>
               <div className="flex items-start gap-3">
-                <Zap className="h-5 w-5 mt-1 text-primary" />
+                <Zap className="h-10 w-10 mt-1 text-primary" />
                 <p>
                   <span className="font-semibold text-foreground">
                     AI-Powered Insights:
@@ -109,7 +109,7 @@ export default function LoginPage() {
                 </p>
               </div>
               <div className="flex items-start gap-3">
-                <BarChart2 className="h-5 w-5 mt-1 text-primary" />
+                <BarChart2 className="h-10 w-10 mt-1 text-primary" />
                 <p>
                   <span className="font-semibold text-foreground">
                     Analytics Dashboard:
@@ -119,7 +119,7 @@ export default function LoginPage() {
                 </p>
               </div>
               <div className="flex items-start gap-3">
-                <Repeat className="h-5 w-5 mt-1 text-primary" />
+                <Repeat className="h-10 w-10 mt-1 text-primary" />
                 <p>
                   <span className="font-semibold text-foreground">
                     Routine Management:
@@ -129,7 +129,7 @@ export default function LoginPage() {
                 </p>
               </div>
               <div className="flex items-start gap-3">
-                <Briefcase className="h-5 w-5 mt-1 text-primary" />
+                <Briefcase className="h-10 w-10 mt-1 text-primary" />
                 <p>
                   <span className="font-semibold text-foreground">
                     Job Hunt Tracking:
