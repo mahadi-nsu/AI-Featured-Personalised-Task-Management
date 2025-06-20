@@ -22,9 +22,9 @@ export default function LoginPage() {
       <div className="grid md:grid-cols-2 h-full items-stretch">
         {/* Left: Illustration & App Info */}
         <div className="hidden md:flex flex-col justify-around p-6 bg-gradient-to-br from-red-800 via-purple-900 to-blue-900 relative">
-          <div className="text-2xl font-bold text-white drop-shadow-lg">
-            Task Management
-          </div>
+          {/* <div className="text-xl font-bold text-white drop-shadow-lg">
+            TaskStack - An AI powered task management platform
+          </div> */}
           <div className="space-y-6 flex-1 flex flex-col justify-start mt-16">
             {/* Illustration */}
             <Image
@@ -32,21 +32,21 @@ export default function LoginPage() {
               alt="Productivity Illustration"
               width={350}
               height={220}
-              className="w-full max-w-xs mx-auto mb-4 drop-shadow-2xl animate-float"
+              className="w-full max-w-xs mx-auto mb-4 drop-shadow-2xl animate-float rounded-lg"
               style={{ minHeight: 180, height: 280 }}
               priority
             />
 
-            <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow-lg">
-              Supercharge your productivity and land your dream job.
+            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-400 via-pink-500 to-blue-500 bg-clip-text text-transparent drop-shadow-lg animate-gradient-x">
+              DevTasker
             </h1>
             <p className="text-lg text-slate-200 mb-4">
               A personalized, AI-powered platform to streamline your daily tasks
-              and accelerate your job search.
+              and accelerate your job application management.
             </p>
           </div>
           <div className="text-sm text-slate-300 opacity-70">
-            © 2024 Your Company, Inc.
+            © 2024 Mahadi.
           </div>
         </div>
         {/* Right: Login Card */}
@@ -193,6 +193,19 @@ export default function LoginPage() {
         }
         .animate-pulse-slow {
           animation: pulse-slow 2.5s infinite;
+        }
+        @keyframes gradient-x {
+          0%,
+          100% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+        }
+        .animate-gradient-x {
+          background-size: 200% 200%;
+          animation: gradient-x 3s ease-in-out infinite;
         }
       `}</style>
     </div>
