@@ -5,6 +5,13 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Define the type for a dev.to article
@@ -26,25 +33,213 @@ type Article = {
   };
 };
 
-const availableTags = [
-  "javascript",
-  "react",
-  "nextjs",
-  "typescript",
-  "css",
-  "html",
-  "node",
-  "python",
-  "go",
-  "rust",
-  "webdev",
-  "ai",
-  "machinelearning",
-  "gamedev",
-  "mobile",
-  "career",
-  "productivity",
-  "discuss",
+// Define the category structure
+type Category = {
+  id: string;
+  name: string;
+  description: string;
+  tags: string[];
+};
+
+const categories: Category[] = [
+  {
+    id: "frontend",
+    name: "Frontend Development",
+    description: "React, Vue, Angular, and modern web technologies",
+    tags: [
+      "react",
+      "vue",
+      "angular",
+      "nextjs",
+      "nuxt",
+      "typescript",
+      "javascript",
+      "css",
+      "html",
+      "tailwind",
+      "svelte",
+      "astro",
+      "webpack",
+      "vite",
+      "styled-components",
+      "sass",
+      "less",
+    ],
+  },
+  {
+    id: "backend",
+    name: "Backend Development",
+    description: "Server-side programming and APIs",
+    tags: [
+      "node",
+      "python",
+      "java",
+      "go",
+      "rust",
+      "php",
+      "ruby",
+      "express",
+      "django",
+      "fastapi",
+      "spring",
+      "gin",
+      "laravel",
+      "api",
+      "rest",
+      "graphql",
+      "microservices",
+      "serverless",
+    ],
+  },
+  {
+    id: "devops",
+    name: "DevOps & Infrastructure",
+    description: "Deployment, CI/CD, and cloud infrastructure",
+    tags: [
+      "docker",
+      "kubernetes",
+      "aws",
+      "azure",
+      "gcp",
+      "terraform",
+      "jenkins",
+      "github-actions",
+      "gitlab-ci",
+      "ansible",
+      "nginx",
+      "linux",
+      "bash",
+      "monitoring",
+      "logging",
+      "security",
+    ],
+  },
+  {
+    id: "databases",
+    name: "Databases & Data Engineering",
+    description: "Database design, SQL, and data processing",
+    tags: [
+      "postgresql",
+      "mysql",
+      "mongodb",
+      "redis",
+      "elasticsearch",
+      "sql",
+      "nosql",
+      "data-engineering",
+      "etl",
+      "data-science",
+      "big-data",
+      "hadoop",
+      "spark",
+      "kafka",
+      "airflow",
+    ],
+  },
+  {
+    id: "algorithms",
+    name: "Data Structures & Algorithms",
+    description: "Problem solving and algorithmic thinking",
+    tags: [
+      "algorithms",
+      "data-structures",
+      "leetcode",
+      "competitive-programming",
+      "dynamic-programming",
+      "graph-algorithms",
+      "sorting",
+      "searching",
+      "complexity",
+      "optimization",
+      "mathematics",
+      "discrete-math",
+    ],
+  },
+  {
+    id: "mobile",
+    name: "Mobile Development",
+    description: "iOS, Android, and cross-platform development",
+    tags: [
+      "react-native",
+      "flutter",
+      "ios",
+      "android",
+      "swift",
+      "kotlin",
+      "mobile",
+      "app-development",
+      "xamarin",
+      "ionic",
+      "capacitor",
+      "mobile-ui",
+      "mobile-ux",
+      "pwa",
+      "hybrid-apps",
+    ],
+  },
+  {
+    id: "ai-ml",
+    name: "AI & Machine Learning",
+    description: "Artificial intelligence and data science",
+    tags: [
+      "ai",
+      "machine-learning",
+      "deep-learning",
+      "tensorflow",
+      "pytorch",
+      "scikit-learn",
+      "nlp",
+      "computer-vision",
+      "neural-networks",
+      "data-science",
+      "python",
+      "jupyter",
+      "pandas",
+      "numpy",
+    ],
+  },
+  {
+    id: "career",
+    name: "Career & Productivity",
+    description: "Professional development and productivity tips",
+    tags: [
+      "career",
+      "productivity",
+      "soft-skills",
+      "leadership",
+      "mentoring",
+      "interview",
+      "resume",
+      "networking",
+      "remote-work",
+      "time-management",
+      "learning",
+      "growth",
+      "motivation",
+      "work-life-balance",
+    ],
+  },
+  {
+    id: "webdev",
+    name: "Web Development",
+    description: "General web development topics",
+    tags: [
+      "webdev",
+      "programming",
+      "coding",
+      "development",
+      "software-engineering",
+      "best-practices",
+      "clean-code",
+      "testing",
+      "debugging",
+      "performance",
+      "accessibility",
+      "seo",
+      "web-standards",
+      "browser-compatibility",
+    ],
+  },
 ];
 
 function ArticleCard({ article }: { article: Article }) {
@@ -111,18 +306,21 @@ export default function LearnPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [selectedTags, setSelectedTags] = useState(["react"]);
+  const [selectedCategory, setSelectedCategory] = useState("frontend");
+  const [selectedTag, setSelectedTag] = useState("react");
+
+  // Get the current category object
+  const currentCategory =
+    categories.find((cat) => cat.id === selectedCategory) || categories[0];
 
   useEffect(() => {
-    setArticles([]); // Clear articles when tags change
+    setArticles([]); // Clear articles when category or tag changes
     setPage(1); // Reset to first page
     fetchArticles(1); // Fetch new articles
-  }, [selectedTags]);
+  }, [selectedCategory, selectedTag]);
 
   const fetchArticles = async (currentPage: number) => {
     setIsLoading(true);
-    // Use only the first selected tag since dev.to API doesn't support multiple tags
-    const selectedTag = selectedTags[0];
     if (!selectedTag) {
       setIsLoading(false);
       return;
@@ -137,11 +335,6 @@ export default function LearnPage() {
         throw new Error("Failed to fetch articles");
       }
       const newArticles: Article[] = await response.json();
-
-      // Debug: Log the first article to see the actual structure
-      if (newArticles.length > 0) {
-        console.log("First article structure:", newArticles[0]);
-      }
 
       if (currentPage === 1) {
         setArticles(newArticles);
@@ -161,8 +354,17 @@ export default function LearnPage() {
     fetchArticles(nextPage);
   };
 
-  const selectTag = (tag: string) => {
-    setSelectedTags([tag]);
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    // Set the first tag of the new category as default
+    const newCategory = categories.find((cat) => cat.id === categoryId);
+    if (newCategory && newCategory.tags.length > 0) {
+      setSelectedTag(newCategory.tags[0]);
+    }
+  };
+
+  const handleTagSelect = (tag: string) => {
+    setSelectedTag(tag);
   };
 
   return (
@@ -173,28 +375,55 @@ export default function LearnPage() {
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Your daily dose of developer knowledge, curated from the community.
-          Select a topic you're interested in to get started.
+          Explore topics by category and find articles that match your
+          interests.
         </p>
       </header>
 
-      <div className="mb-8 p-4 bg-muted/50 rounded-lg">
-        <h3 className="text-lg font-semibold mb-3 text-center">
-          What are you interested in?
-        </h3>
-        <p className="text-sm text-muted-foreground text-center mb-4">
-          Select one topic to explore articles
-        </p>
-        <div className="flex flex-wrap justify-center gap-2">
-          {availableTags.map((tag) => (
-            <Button
-              key={tag}
-              variant={selectedTags.includes(tag) ? "default" : "outline"}
-              onClick={() => selectTag(tag)}
-              className="capitalize"
-            >
-              {tag}
-            </Button>
-          ))}
+      {/* Category Selection */}
+      <div className="mb-6 p-6 bg-muted/50 rounded-lg">
+        <div className="max-w-md mx-auto mb-4">
+          <label className="text-sm font-medium text-muted-foreground mb-2 block">
+            Choose a category
+          </label>
+          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  <div>
+                    <div className="font-medium">{category.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {category.description}
+                    </div>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Tag Selection */}
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-3">{currentCategory.name}</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            {currentCategory.description}
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {currentCategory.tags.map((tag) => (
+              <Button
+                key={tag}
+                variant={selectedTag === tag ? "default" : "outline"}
+                onClick={() => handleTagSelect(tag)}
+                className="capitalize text-sm"
+                size="sm"
+              >
+                {tag}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -216,10 +445,10 @@ export default function LearnPage() {
         </div>
       )}
 
-      {!isLoading && articles.length === 0 && selectedTags.length > 0 && (
+      {!isLoading && articles.length === 0 && selectedTag && (
         <div className="text-center py-10">
           <p className="text-muted-foreground">
-            No articles found for the selected topic. Try selecting a different
+            No articles found for "{selectedTag}". Try selecting a different
             tag!
           </p>
         </div>
