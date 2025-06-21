@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -13,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
+import { Search, X } from "lucide-react";
 
 // Define the type for a dev.to article
 type Article = {
@@ -308,10 +310,25 @@ export default function LearnPage() {
   const [page, setPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState("frontend");
   const [selectedTag, setSelectedTag] = useState("react");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchMode, setIsSearchMode] = useState(false);
 
   // Get the current category object
   const currentCategory =
     categories.find((cat) => cat.id === selectedCategory) || categories[0];
+
+  // Get all available tags for search
+  const allTags = categories.flatMap((cat) => cat.tags);
+
+  // Filter tags based on search query
+  const filteredTags = currentCategory.tags.filter((tag) =>
+    tag.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Get search suggestions
+  const searchSuggestions = allTags
+    .filter((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+    .slice(0, 5);
 
   useEffect(() => {
     setArticles([]); // Clear articles when category or tag changes
@@ -356,6 +373,8 @@ export default function LearnPage() {
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategory(categoryId);
+    setIsSearchMode(false);
+    setSearchQuery("");
     // Set the first tag of the new category as default
     const newCategory = categories.find((cat) => cat.id === categoryId);
     if (newCategory && newCategory.tags.length > 0) {
@@ -365,6 +384,43 @@ export default function LearnPage() {
 
   const handleTagSelect = (tag: string) => {
     setSelectedTag(tag);
+    setIsSearchMode(false);
+    setSearchQuery("");
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setIsSearchMode(query.length > 0);
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Find if the search query matches any tag
+      const matchingTag = allTags.find(
+        (tag) => tag.toLowerCase() === searchQuery.toLowerCase()
+      );
+
+      if (matchingTag) {
+        setSelectedTag(matchingTag);
+        // Find which category this tag belongs to
+        const categoryWithTag = categories.find((cat) =>
+          cat.tags.includes(matchingTag)
+        );
+        if (categoryWithTag) {
+          setSelectedCategory(categoryWithTag.id);
+        }
+      } else {
+        // If no exact match, search for articles with the query as tag
+        setSelectedTag(searchQuery.toLowerCase());
+      }
+      setIsSearchMode(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setIsSearchMode(false);
   };
 
   return (
@@ -379,6 +435,55 @@ export default function LearnPage() {
           interests.
         </p>
       </header>
+
+      {/* Search Bar */}
+      <div className="mb-6">
+        <form
+          onSubmit={handleSearchSubmit}
+          className="max-w-md mx-auto relative"
+        >
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search for topics (e.g., react, docker, algorithms)..."
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10 pr-10"
+            />
+            {searchQuery && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={clearSearch}
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+
+          {/* Search Suggestions */}
+          {isSearchMode && searchSuggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 bg-background border rounded-md shadow-lg z-10 mt-1">
+              {searchSuggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery(suggestion);
+                    handleSearchSubmit(new Event("submit") as any);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-muted focus:bg-muted focus:outline-none"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
+        </form>
+      </div>
 
       {/* Category Selection */}
       <div className="mb-6 p-6 bg-muted/50 rounded-lg">
@@ -412,7 +517,7 @@ export default function LearnPage() {
             {currentCategory.description}
           </p>
           <div className="flex flex-wrap justify-center gap-2">
-            {currentCategory.tags.map((tag) => (
+            {(isSearchMode ? filteredTags : currentCategory.tags).map((tag) => (
               <Button
                 key={tag}
                 variant={selectedTag === tag ? "default" : "outline"}
@@ -423,6 +528,11 @@ export default function LearnPage() {
                 {tag}
               </Button>
             ))}
+            {isSearchMode && filteredTags.length === 0 && (
+              <p className="text-sm text-muted-foreground col-span-full">
+                No tags found matching "{searchQuery}"
+              </p>
+            )}
           </div>
         </div>
       </div>
