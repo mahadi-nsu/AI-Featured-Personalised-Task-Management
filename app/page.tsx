@@ -4,6 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TodaysTasks } from "@/components/todays-tasks";
 import { DateTasks } from "@/components/date-tasks";
 
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   return (
     <div className="container mx-auto py-8">

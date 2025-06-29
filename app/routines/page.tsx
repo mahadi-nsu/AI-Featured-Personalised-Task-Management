@@ -22,6 +22,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Clock, Trash2, Edit } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 export default function RoutinesPage() {
   const [routines, setRoutines] = useState<Routine[]>([]);

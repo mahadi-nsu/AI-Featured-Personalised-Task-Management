@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X } from "lucide-react";
+import { BookOpen, ExternalLink, Clock, User } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 // Define the type for a dev.to article
 type Article = {

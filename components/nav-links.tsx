@@ -87,7 +87,9 @@ export function NavLinks() {
               Analytics
             </Link>
 
-            <Link
+            {/* TODO: Will implement routines later */}
+
+            {/* <Link
               href="/routines"
               className={`hover:text-gray-300 transition-colors ${
                 pathname === "/routines"
@@ -96,7 +98,7 @@ export function NavLinks() {
               }`}
             >
               Routines
-            </Link>
+            </Link> */}
 
             <Link
               href="/job-hunt"
@@ -227,7 +229,9 @@ export function NavLinks() {
             Analytics
           </Link>
 
-          <Link
+          {/* TODO: Will implement routines later */}
+
+          {/* <Link
             href="/routines"
             className={`text-2xl hover:text-gray-300 transition-colors ${
               pathname === "/routines"
@@ -237,7 +241,7 @@ export function NavLinks() {
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Routines
-          </Link>
+          </Link> */}
 
           <Link
             href="/job-hunt"

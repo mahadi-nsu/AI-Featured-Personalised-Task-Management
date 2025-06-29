@@ -1,9 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { toast } from "sonner";
 import { CheckCircle, Zap, Briefcase, BarChart2, Repeat } from "lucide-react";
 import Image from "next/image";
+
+export const dynamic = "force-dynamic";
 
 export default function LoginPage() {
   const supabase = createClientComponentClient();

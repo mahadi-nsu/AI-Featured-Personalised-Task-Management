@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
@@ -24,11 +24,15 @@ import {
   ResponsiveContainer,
   RadialBarChart,
   RadialBar,
+  LineChart,
+  Line,
 } from "recharts";
 import { fetchTasks } from "@/lib/taskStorage";
 import { Task, TaskStatus, TaskPriority } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+export const dynamic = "force-dynamic";
 
 export default function AnalyticsPage() {
   const [date, setDate] = useState<Date>(new Date());

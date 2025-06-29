@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import JobHuntClient from "./components/JobHuntClient";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function JobHuntPage() {
   const supabase = createServerComponentClient({ cookies });
 

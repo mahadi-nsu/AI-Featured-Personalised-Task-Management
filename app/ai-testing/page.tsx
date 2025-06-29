@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { CompletedTasks } from "@/components/completed-tasks";
 import { TestCases } from "@/components/test-cases";
 
+export const dynamic = "force-dynamic";
+
 interface CardProps {
   title: string;
   children: ReactNode;
