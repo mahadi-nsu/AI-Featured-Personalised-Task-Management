@@ -109,6 +109,17 @@ export function NavLinks() {
               Job-hunt
             </Link>
 
+            <Link
+              href="/learn"
+              className={`hover:text-gray-300 transition-colors ${
+                pathname === "/learn"
+                  ? "text-white font-bold border-b-2 border-white"
+                  : "text-gray-400"
+              }`}
+            >
+              Read Articles
+            </Link>
+
             {/* <Link
               href="/debug"
               className={`hover:text-gray-300 transition-colors ${
@@ -226,6 +237,30 @@ export function NavLinks() {
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Routines
+          </Link>
+
+          <Link
+            href="/job-hunt"
+            className={`text-2xl hover:text-gray-300 transition-colors ${
+              pathname === "/job-hunt"
+                ? "text-white font-bold border-b-2 border-white"
+                : "text-gray-400"
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Job-hunt
+          </Link>
+
+          <Link
+            href="/learn"
+            className={`text-2xl hover:text-gray-300 transition-colors ${
+              pathname === "/learn"
+                ? "text-white font-bold border-b-2 border-white"
+                : "text-gray-400"
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Read Articles
           </Link>
 
           {/* <Link
