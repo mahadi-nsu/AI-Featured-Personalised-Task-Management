@@ -695,7 +695,8 @@ export function DateTasks() {
   return (
     <>
       <div className="w-full mx-auto p-6 space-y-8">
-        <div className="flex justify-between items-center">
+        {/* PC Layout: All in one row */}
+        <div className="hidden md:flex justify-between items-center">
           <h2 className="text-2xl font-bold">Tasks by Date</h2>
           <div className="flex items-center gap-4">
             <Popover>
@@ -720,11 +721,43 @@ export function DateTasks() {
                 />
               </PopoverContent>
             </Popover>
+            <CreateTaskModal selectedDate={date} onTaskCreated={setTasks} />
           </div>
         </div>
 
-        <div className="flex justify-end mb-4">
-          <CreateTaskModal selectedDate={date} onTaskCreated={setTasks} />
+        {/* Mobile Layout: 2 rows */}
+        <div className="md:hidden space-y-4">
+          {/* First row: Title */}
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">Tasks by Date</h2>
+          </div>
+
+          {/* Second row: Date picker and Create button */}
+          <div className="flex items-center gap-4">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={(newDate) => newDate && setDate(newDate)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <CreateTaskModal selectedDate={date} onTaskCreated={setTasks} />
+          </div>
         </div>
 
         <div className="space-y-4">
