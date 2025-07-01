@@ -87,18 +87,11 @@ export function CompletedTasks({
                 onClick={() =>
                   onGenerateTest(task.featureName, task.description, task.id)
                 }
-                disabled={isLoading}
+                disabled={isLoading || loadedTaskId === task.id}
               >
-                {isLoading && loadedTaskId === task.id ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : loadedTaskId === task.id ? (
-                  "Test Cases Loaded!"
-                ) : (
-                  "Generate AI Test Case"
-                )}
+                {loadedTaskId === task.id
+                  ? "Test Case Generated"
+                  : "Generate AI Test Case"}
               </Button>
             </div>
           </Card>
