@@ -20,6 +20,7 @@ import { categories, type Category } from "./static/categories";
 import { Article } from "./static/articleTypes";
 import { useFetchArticlesApi } from "./api/useFetchArticlesApi";
 import ArticleCard from "./components/ArticleCard";
+import SearchBar from "./components/SearchBar";
 
 export const dynamic = "force-dynamic";
 
@@ -127,51 +128,14 @@ export default function LearnPage() {
 
       {/* Search Bar */}
       <div className="mb-6">
-        <form
-          onSubmit={handleSearchSubmit}
-          className="max-w-md mx-auto relative"
-        >
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search for topics (e.g., react, docker, algorithms)..."
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10 pr-10"
-            />
-            {searchQuery && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={clearSearch}
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-
-          {/* Search Suggestions */}
-          {isSearchMode && searchSuggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 bg-background border rounded-md shadow-lg z-10 mt-1">
-              {searchSuggestions.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery(suggestion);
-                    handleSearchSubmit(new Event("submit") as any);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-muted focus:bg-muted focus:outline-none"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          )}
-        </form>
+        <SearchBar
+          searchQuery={searchQuery}
+          onSearchChange={handleSearch}
+          onSearchSubmit={handleSearchSubmit}
+          isSearchMode={isSearchMode}
+          searchSuggestions={searchSuggestions}
+          clearSearch={clearSearch}
+        />
       </div>
 
       {/* Category Selection */}
