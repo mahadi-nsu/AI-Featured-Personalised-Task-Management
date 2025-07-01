@@ -17,27 +17,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, X } from "lucide-react";
 import { BookOpen, ExternalLink, Clock, User } from "lucide-react";
 import { categories, type Category } from "./static/categories";
+import { Article } from "./static/articleTypes";
 
 export const dynamic = "force-dynamic";
-
-// Define the type for a dev.to article
-type Article = {
-  id: number;
-  title: string;
-  description: string;
-  cover_image: string | null;
-  readable_publish_date: string;
-  url: string;
-  comments_count: number;
-  public_reactions_count: number;
-  reading_time_minutes: number;
-  tag_list: string[];
-  tags: string;
-  user: {
-    name: string;
-    profile_image_90: string;
-  };
-};
 
 function ArticleCard({ article }: { article: Article }) {
   // Ensure tag_list is always an array
