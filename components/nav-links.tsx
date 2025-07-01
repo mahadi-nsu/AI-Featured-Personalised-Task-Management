@@ -53,10 +53,10 @@ export function NavLinks() {
           <div className="hidden md:flex items-center gap-4">
             <Link
               href="/"
-              className={`hover:text-gray-300 transition-colors ${
+              className={`hover:text-primary transition-colors ${
                 pathname === "/"
-                  ? "text-white font-bold border-b-2 border-white"
-                  : "text-gray-400"
+                  ? "text-primary font-bold border-b-2 border-primary"
+                  : "text-muted-foreground"
               }`}
             >
               Home
@@ -78,10 +78,10 @@ export function NavLinks() {
 
             <Link
               href="/analytics"
-              className={`hover:text-gray-300 transition-colors ${
+              className={`hover:text-primary transition-colors ${
                 pathname === "/analytics"
-                  ? "text-white font-bold border-b-2 border-white"
-                  : "text-gray-400"
+                  ? "text-primary font-bold border-b-2 border-primary"
+                  : "text-muted-foreground"
               }`}
             >
               Analytics
@@ -91,10 +91,10 @@ export function NavLinks() {
 
             {/* <Link
               href="/routines"
-              className={`hover:text-gray-300 transition-colors ${
+              className={`hover:text-primary transition-colors ${
                 pathname === "/routines"
-                  ? "text-white font-bold border-b-2 border-white"
-                  : "text-gray-400"
+                  ? "text-primary font-bold border-b-2 border-primary"
+                  : "text-muted-foreground"
               }`}
             >
               Routines
@@ -102,10 +102,10 @@ export function NavLinks() {
 
             <Link
               href="/job-hunt"
-              className={`hover:text-gray-300 transition-colors ${
+              className={`hover:text-primary transition-colors ${
                 pathname === "/job-hunt"
-                  ? "text-white font-bold border-b-2 border-white"
-                  : "text-gray-400"
+                  ? "text-primary font-bold border-b-2 border-primary"
+                  : "text-muted-foreground"
               }`}
             >
               Job-hunt
@@ -113,10 +113,10 @@ export function NavLinks() {
 
             <Link
               href="/learn"
-              className={`hover:text-gray-300 transition-colors ${
+              className={`hover:text-primary transition-colors ${
                 pathname === "/learn"
-                  ? "text-white font-bold border-b-2 border-white"
-                  : "text-gray-400"
+                  ? "text-primary font-bold border-b-2 border-primary"
+                  : "text-muted-foreground"
               }`}
             >
               Read Articles
@@ -124,10 +124,10 @@ export function NavLinks() {
 
             {/* <Link
               href="/debug"
-              className={`hover:text-gray-300 transition-colors ${
+              className={`hover:text-primary transition-colors ${
                 pathname === "/debug"
-                  ? "text-white font-bold border-b-2 border-white"
-                  : "text-gray-400"
+                  ? "text-primary font-bold border-b-2 border-primary"
+                  : "text-muted-foreground"
               }`}
             >
               Backend/Localstorage
@@ -185,17 +185,17 @@ export function NavLinks() {
 
       {/* Mobile Navigation */}
       <div
-        className={`fixed inset-0 bg-gray-900/95 z-50 md:hidden transition-transform duration-300 ${
+        className={`fixed inset-0 bg-background/95 z-50 md:hidden transition-transform duration-300 ${
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="flex flex-col items-center justify-center h-full gap-8">
           <Link
             href="/"
-            className={`text-2xl hover:text-gray-300 transition-colors ${
+            className={`text-2xl hover:text-primary transition-colors ${
               pathname === "/"
-                ? "text-white font-bold border-b-2 border-white"
-                : "text-gray-400"
+                ? "text-primary font-bold border-b-2 border-primary"
+                : "text-muted-foreground"
             }`}
             onClick={() => setIsMobileMenuOpen(false)}
           >
@@ -219,10 +219,10 @@ export function NavLinks() {
 
           <Link
             href="/analytics"
-            className={`text-2xl hover:text-gray-300 transition-colors ${
+            className={`text-2xl hover:text-primary transition-colors ${
               pathname === "/analytics"
-                ? "text-white font-bold border-b-2 border-white"
-                : "text-gray-400"
+                ? "text-primary font-bold border-b-2 border-primary"
+                : "text-muted-foreground"
             }`}
             onClick={() => setIsMobileMenuOpen(false)}
           >
@@ -233,10 +233,10 @@ export function NavLinks() {
 
           {/* <Link
             href="/routines"
-            className={`text-2xl hover:text-gray-300 transition-colors ${
+            className={`text-2xl hover:text-primary transition-colors ${
               pathname === "/routines"
-                ? "text-white font-bold border-b-2 border-white"
-                : "text-gray-400"
+                ? "text-primary font-bold border-b-2 border-primary"
+                : "text-muted-foreground"
             }`}
             onClick={() => setIsMobileMenuOpen(false)}
           >
@@ -245,10 +245,10 @@ export function NavLinks() {
 
           <Link
             href="/job-hunt"
-            className={`text-2xl hover:text-gray-300 transition-colors ${
+            className={`text-2xl hover:text-primary transition-colors ${
               pathname === "/job-hunt"
-                ? "text-white font-bold border-b-2 border-white"
-                : "text-gray-400"
+                ? "text-primary font-bold border-b-2 border-primary"
+                : "text-muted-foreground"
             }`}
             onClick={() => setIsMobileMenuOpen(false)}
           >
@@ -257,10 +257,10 @@ export function NavLinks() {
 
           <Link
             href="/learn"
-            className={`text-2xl hover:text-gray-300 transition-colors ${
+            className={`text-2xl hover:text-primary transition-colors ${
               pathname === "/learn"
-                ? "text-white font-bold border-b-2 border-white"
-                : "text-gray-400"
+                ? "text-primary font-bold border-b-2 border-primary"
+                : "text-muted-foreground"
             }`}
             onClick={() => setIsMobileMenuOpen(false)}
           >
@@ -269,10 +269,10 @@ export function NavLinks() {
 
           {/* <Link
             href="/debug"
-            className={`text-2xl hover:text-gray-300 transition-colors ${
+            className={`text-2xl hover:text-primary transition-colors ${
               pathname === "/debug"
-                ? "text-white font-bold border-b-2 border-white"
-                : "text-gray-400"
+                ? "text-primary font-bold border-b-2 border-primary"
+                : "text-muted-foreground"
             }`}
             onClick={() => setIsMobileMenuOpen(false)}
           >
@@ -282,7 +282,7 @@ export function NavLinks() {
 
           {user ? (
             <div className="flex flex-col items-center gap-2">
-              <p className="text-white">{user.email}</p>
+              <p className="text-foreground">{user.email}</p>
               <Button
                 variant="ghost"
                 onClick={handleLogout}
