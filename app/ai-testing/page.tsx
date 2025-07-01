@@ -49,7 +49,7 @@ export default function AITestingPage() {
 
     try {
       const response = await fetch(
-        "http://159.223.50.50:5001/generate-test-cases",
+        "https://gemini-ai-integration-golang.onrender.com/generate-test-cases",
         {
           method: "POST",
           headers: {
