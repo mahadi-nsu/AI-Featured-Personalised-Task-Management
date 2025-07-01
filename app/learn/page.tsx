@@ -533,7 +533,7 @@ export default function LearnPage() {
             ))}
             {isSearchMode && filteredTags.length === 0 && (
               <p className="text-sm text-muted-foreground col-span-full">
-                No tags found matching "{searchQuery}"
+                No tags found matching &quot;{searchQuery}&quot;
               </p>
             )}
           </div>
@@ -561,8 +561,8 @@ export default function LearnPage() {
       {!isLoading && articles.length === 0 && selectedTag && (
         <div className="text-center py-10">
           <p className="text-muted-foreground">
-            No articles found for "{selectedTag}". Try selecting a different
-            tag!
+            No articles found for &quot;{selectedTag}&quot;. Try selecting a
+            different tag!
           </p>
         </div>
       )}
