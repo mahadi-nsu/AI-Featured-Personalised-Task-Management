@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import { Search, X } from "lucide-react";
 import { BookOpen, ExternalLink, Clock, User } from "lucide-react";
 import { categories, type Category } from "./static/categories";
 import { Article } from "./static/articleTypes";
+import { useFetchArticlesApi } from "./api/useFetchArticlesApi";
 
 export const dynamic = "force-dynamic";
 
@@ -82,8 +83,6 @@ function ArticleCard({ article }: { article: Article }) {
 }
 
 export default function LearnPage() {
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState("frontend");
   const [selectedTag, setSelectedTag] = useState("react");
@@ -107,51 +106,22 @@ export default function LearnPage() {
     .filter((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
     .slice(0, 5);
 
-  useEffect(() => {
-    setArticles([]); // Clear articles when category or tag changes
-    setPage(1); // Reset to first page
-    fetchArticles(1); // Fetch new articles
-  }, [selectedCategory, selectedTag]);
-
-  const fetchArticles = async (currentPage: number) => {
-    setIsLoading(true);
-    if (!selectedTag) {
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const perPage = 6;
-      const response = await fetch(
-        `https://dev.to/api/articles?tag=${selectedTag}&page=${currentPage}&per_page=${perPage}`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch articles");
-      }
-      const newArticles: Article[] = await response.json();
-
-      if (currentPage === 1) {
-        setArticles(newArticles);
-      } else {
-        setArticles((prev) => [...prev, ...newArticles]);
-      }
-    } catch (error) {
-      console.error("Error fetching articles:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Use the new hook
+  const { articles, isLoading, error } = useFetchArticlesApi(
+    selectedTag,
+    page,
+    6
+  );
 
   const handleLoadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchArticles(nextPage);
+    setPage((prev) => prev + 1);
   };
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategory(categoryId);
     setIsSearchMode(false);
     setSearchQuery("");
+    setPage(1); // Reset page
     // Set the first tag of the new category as default
     const newCategory = categories.find((cat) => cat.id === categoryId);
     if (newCategory && newCategory.tags.length > 0) {
@@ -163,6 +133,7 @@ export default function LearnPage() {
     setSelectedTag(tag);
     setIsSearchMode(false);
     setSearchQuery("");
+    setPage(1); // Reset page
   };
 
   const handleSearch = (query: string) => {
