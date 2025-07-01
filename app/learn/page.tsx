@@ -1,23 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, X } from "lucide-react";
-import { BookOpen, ExternalLink, Clock, User } from "lucide-react";
-import { categories, type Category } from "./static/categories";
-import { Article } from "./static/articleTypes";
+import { categories } from "./static/categories";
 import { useFetchArticlesApi } from "./api/useFetchArticlesApi";
 import ArticleCard from "./components/ArticleCard";
 import SearchBar from "./components/SearchBar";
@@ -170,13 +155,11 @@ export default function LearnPage() {
         />
       </div>
 
-      <AnimatePresence>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {articles.map((article) => (
-            <ArticleCard key={article.id} article={article} />
-          ))}
-        </div>
-      </AnimatePresence>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {articles.map((article) => (
+          <ArticleCard key={article.id} article={article} />
+        ))}
+      </div>
 
       {isLoading && <p className="text-center mt-8">Loading articles...</p>}
 
