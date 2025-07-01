@@ -2,7 +2,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { Article } from "../static/articleTypes.ts";
+import type { Article } from "../types/articleTypes.js";
 
 interface ArticleCardProps {
   article: Article;

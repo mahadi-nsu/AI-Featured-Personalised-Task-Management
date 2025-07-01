@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { Article } from "../static/articleTypes.ts";
+import type { Article } from "../types/articleTypes";
 
 export function useFetchArticlesApi(
   tag: string,
