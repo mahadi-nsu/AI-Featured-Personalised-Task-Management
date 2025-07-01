@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { CreateTaskModal } from "@/components/create-task-modal";
 import { saveTasks, loadTasks } from "@/lib/taskStorage";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TestCase {
   id: string;
@@ -151,9 +152,20 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <Card className="p-6 flex flex-col gap-4 items-center justify-center">
+        <div className="flex items-center gap-2 mb-2">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <span className="text-lg font-semibold text-primary">
+            Gemini is thinking...
+          </span>
+        </div>
+        <div className="w-full flex flex-col gap-3 mt-2">
+          <Skeleton className="h-6 w-3/4 mx-auto" />
+          <Skeleton className="h-4 w-5/6 mx-auto" />
+          <Skeleton className="h-4 w-2/3 mx-auto" />
+          <Skeleton className="h-4 w-1/2 mx-auto" />
+        </div>
+      </Card>
     );
   }
 
