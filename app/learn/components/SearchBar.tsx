@@ -20,7 +20,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   searchSuggestions,
   clearSearch,
 }) => (
-  <div className="mb-6">
+  <div className="mb-4">
     <form onSubmit={onSearchSubmit} className="max-w-md mx-auto relative">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />

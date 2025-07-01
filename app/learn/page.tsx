@@ -21,6 +21,8 @@ import { Article } from "./static/articleTypes";
 import { useFetchArticlesApi } from "./api/useFetchArticlesApi";
 import ArticleCard from "./components/ArticleCard";
 import SearchBar from "./components/SearchBar";
+import CategorySelector from "./components/CategorySelector";
+import TagSelector from "./components/TagSelector";
 
 export const dynamic = "force-dynamic";
 
@@ -126,68 +128,46 @@ export default function LearnPage() {
         </p>
       </header>
 
-      {/* Search Bar */}
-      <div className="mb-6">
-        <SearchBar
-          searchQuery={searchQuery}
-          onSearchChange={handleSearch}
-          onSearchSubmit={handleSearchSubmit}
-          isSearchMode={isSearchMode}
-          searchSuggestions={searchSuggestions}
-          clearSearch={clearSearch}
-        />
-      </div>
-
-      {/* Category Selection */}
+      {/* Category Selection + SearchBar (side by side) */}
       <div className="mb-6 p-6 bg-muted/50 rounded-lg">
-        <div className="max-w-md mx-auto mb-4">
-          <label className="text-sm font-medium text-muted-foreground mb-2 block">
-            Choose a category
-          </label>
-          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  <div>
-                    <div className="font-medium">{category.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {category.description}
-                    </div>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Tag Selection */}
-        <div className="text-center">
-          <h3 className="text-lg font-semibold mb-3">{currentCategory.name}</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            {currentCategory.description}
-          </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {(isSearchMode ? filteredTags : currentCategory.tags).map((tag) => (
-              <Button
-                key={tag}
-                variant={selectedTag === tag ? "default" : "outline"}
-                onClick={() => handleTagSelect(tag)}
-                className="capitalize text-sm"
-                size="sm"
-              >
-                {tag}
-              </Button>
-            ))}
-            {isSearchMode && filteredTags.length === 0 && (
-              <p className="text-sm text-muted-foreground col-span-full">
-                No tags found matching &quot;{searchQuery}&quot;
-              </p>
-            )}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+          <div className="w-full md:w-1/2 max-w-md flex-1">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Search articles
+            </label>
+            <SearchBar
+              searchQuery={searchQuery}
+              onSearchChange={handleSearch}
+              onSearchSubmit={handleSearchSubmit}
+              isSearchMode={isSearchMode}
+              searchSuggestions={searchSuggestions}
+              clearSearch={clearSearch}
+            />
+          </div>
+          <div className="w-full md:w-1/2 max-w-md flex-1">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Choose a category
+            </label>
+            <CategorySelector
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={handleCategoryChange}
+            />
           </div>
         </div>
+      </div>
+
+      {/* Tag Selection */}
+      <div className="text-center mb-8">
+        <TagSelector
+          tags={currentCategory.tags}
+          selectedTag={selectedTag}
+          onTagSelect={handleTagSelect}
+          isSearchMode={isSearchMode}
+          filteredTags={filteredTags}
+          searchQuery={searchQuery}
+          currentCategory={currentCategory}
+        />
       </div>
 
       <AnimatePresence>
