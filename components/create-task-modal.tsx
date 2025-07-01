@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { RichTextEditor } from "./ui/rich-text-editor";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Task, TaskPriority, TaskStatus } from "@/lib/utils";
 import { Plus, Tag, Clock } from "lucide-react";
 import { createTaskInSupabase, fetchTasks } from "@/lib/taskStorage";
@@ -23,6 +23,9 @@ interface CreateTaskModalProps {
   onClose?: () => void;
   defaultFeatureName?: string;
   defaultDescription?: string;
+  defaultPriority?: TaskPriority;
+  defaultEstimatedHours?: number;
+  defaultEstimatedMinutes?: number;
   onSubmit?: (task: {
     featureName: string;
     description: string;
@@ -39,14 +42,38 @@ export function CreateTaskModal({
   onClose: externalOnClose,
   defaultFeatureName = "",
   defaultDescription = "",
+  defaultPriority = TaskPriority.LOW,
+  defaultEstimatedHours = 0,
+  defaultEstimatedMinutes = 0,
   onSubmit: externalOnSubmit,
 }: CreateTaskModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [featureName, setFeatureName] = useState(defaultFeatureName);
   const [description, setDescription] = useState(defaultDescription);
-  const [priority, setPriority] = useState<TaskPriority>(TaskPriority.LOW);
-  const [estimatedHours, setEstimatedHours] = useState(0);
-  const [estimatedMinutes, setEstimatedMinutes] = useState(0);
+  const [priority, setPriority] = useState<TaskPriority>(defaultPriority);
+  const [estimatedHours, setEstimatedHours] = useState(defaultEstimatedHours);
+  const [estimatedMinutes, setEstimatedMinutes] = useState(
+    defaultEstimatedMinutes
+  );
+
+  useEffect(() => {
+    if (externalIsOpen ?? isOpen) {
+      setFeatureName(defaultFeatureName);
+      setDescription(defaultDescription);
+      setPriority(defaultPriority);
+      setEstimatedHours(defaultEstimatedHours);
+      setEstimatedMinutes(defaultEstimatedMinutes);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    externalIsOpen,
+    isOpen,
+    defaultFeatureName,
+    defaultDescription,
+    defaultPriority,
+    defaultEstimatedHours,
+    defaultEstimatedMinutes,
+  ]);
 
   const handleOpenChange = (open: boolean) => {
     if (externalIsOpen !== undefined) {
@@ -145,6 +172,7 @@ export function CreateTaskModal({
             </div>
             <div className="grid gap-2">
               <RichTextEditor
+                key={defaultDescription}
                 value={description}
                 onChange={setDescription}
                 placeholder="Task description..."
