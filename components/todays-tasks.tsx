@@ -1672,9 +1672,14 @@ export function TodaysTasks() {
             <div className="text-center py-8">
               {todaysTasks.length === 0 ? (
                 <div className="space-y-4">
-                  <p className="text-muted-foreground">
+                  <p className="text-foreground font-medium">
                     No tasks for today. Add one to get started!
                   </p>
+                  <div className="flex items-center justify-center">
+                    <div className="text-sm font-semibold bg-blue-100 text-blue-800 px-3 py-1 rounded-full dark:bg-blue-900/30 dark:text-blue-300">
+                      Or
+                    </div>
+                  </div>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <Button
                       onClick={handlePopulateTestData}
@@ -1693,14 +1698,6 @@ export function TodaysTasks() {
                           Populate Test Data
                         </>
                       )}
-                    </Button>
-                    <Button
-                      onClick={handleClearTestData}
-                      variant="outline"
-                      size="sm"
-                      className="bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 hover:text-yellow-900 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700 dark:hover:bg-yellow-900/50"
-                    >
-                      Clear Test Data
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground max-w-md mx-auto">
