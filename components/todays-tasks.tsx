@@ -53,6 +53,8 @@ import {
   fetchTasks,
   updateTaskInSupabase,
   updateTasksOrderInSupabase,
+  populateTestData,
+  clearTestData,
 } from "@/lib/taskStorage";
 import {
   DndContext,
@@ -1114,6 +1116,7 @@ export function TodaysTasks() {
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "all">(
     "all"
   );
+  const [isLoadingTestData, setIsLoadingTestData] = useState(false);
 
   // Setup sensors for drag and drop
   const sensors = useSensors(
@@ -1239,6 +1242,39 @@ export function TodaysTasks() {
     setPriority(undefined);
     setEstimatedHours(0);
     setEstimatedMinutes(0);
+  };
+
+  const handlePopulateTestData = async () => {
+    setIsLoadingTestData(true);
+    try {
+      const testTasks = await populateTestData();
+      setTasks(testTasks);
+      toast.success("Test data populated successfully!", {
+        description: "You can now explore the app features with sample tasks.",
+      });
+    } catch (error) {
+      console.error("Error populating test data:", error);
+      toast.error("Failed to populate test data", {
+        description: "Please try again later.",
+      });
+    } finally {
+      setIsLoadingTestData(false);
+    }
+  };
+
+  const handleClearTestData = async () => {
+    try {
+      await clearTestData();
+      setTasks([]);
+      toast.success("Test data cleared successfully!", {
+        description: "You can now start with your own tasks.",
+      });
+    } catch (error) {
+      console.error("Error clearing test data:", error);
+      toast.error("Failed to clear test data", {
+        description: "Please try again later.",
+      });
+    }
   };
 
   // Handle drag start
@@ -1559,9 +1595,21 @@ export function TodaysTasks() {
                 Board
               </Button>
             </div>
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary to-primary/50 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
-              <CreateTaskModal onTaskCreated={setTasks} />
+            <div className="flex items-center gap-2">
+              {todaysTasks.length > 0 && (
+                <Button
+                  onClick={handleClearTestData}
+                  variant="outline"
+                  size="sm"
+                  className="bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 hover:text-yellow-900 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700 dark:hover:bg-yellow-900/50"
+                >
+                  Clear Test Data
+                </Button>
+              )}
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-primary/50 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
+                <CreateTaskModal onTaskCreated={setTasks} />
+              </div>
             </div>
           </div>
         </div>
@@ -1621,10 +1669,52 @@ export function TodaysTasks() {
 
         <div className="space-y-4">
           {filteredTasks.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {todaysTasks.length === 0
-                ? "No tasks for today. Add one to get started!"
-                : "No tasks match your filters. Try adjusting your search or filters."}
+            <div className="text-center py-8">
+              {todaysTasks.length === 0 ? (
+                <div className="space-y-4">
+                  <p className="text-muted-foreground">
+                    No tasks for today. Add one to get started!
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button
+                      onClick={handlePopulateTestData}
+                      disabled={isLoadingTestData}
+                      variant="outline"
+                      className="bg-cyan-100 text-cyan-800 border-cyan-300 hover:bg-cyan-200 hover:text-cyan-900 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-700 dark:hover:bg-cyan-900/50"
+                    >
+                      {isLoadingTestData ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Populate Test Data
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={handleClearTestData}
+                      variant="outline"
+                      size="sm"
+                      className="bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 hover:text-yellow-900 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700 dark:hover:bg-yellow-900/50"
+                    >
+                      Clear Test Data
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                    Click &quot;Populate Test Data&quot; to explore the app
+                    features with sample tasks. You can clear them anytime to
+                    start fresh.
+                  </p>
+                </div>
+              ) : (
+                <div className="text-muted-foreground">
+                  No tasks match your filters. Try adjusting your search or
+                  filters.
+                </div>
+              )}
             </div>
           ) : viewMode === "list" ? (
             // List View

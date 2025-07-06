@@ -545,3 +545,144 @@ export async function fetchCompletedTasks(): Promise<Task[]> {
     startedAt: task.started_at,
   }));
 }
+
+// Populate test data for the current user
+export async function populateTestData(): Promise<Task[]> {
+  const supabase = createClientComponentClient();
+
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    console.log("No user found");
+    return [];
+  }
+
+  const today = new Date();
+  const formattedDate = `${today.getFullYear()}-${String(
+    today.getMonth() + 1
+  ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+  const testTasks = [
+    {
+      user_id: user.id,
+      feature_name: "User Registration",
+      description:
+        "Allow new users to create an account with email, password, and profile information. The registration process includes email verification and password strength validation.",
+      status: TaskStatus.DONE,
+      date: formattedDate,
+      created_at: new Date().toISOString(),
+      order_index: 0,
+      priority: TaskPriority.HIGH,
+      estimated_hours: 4,
+      estimated_minutes: 30,
+    },
+    {
+      user_id: user.id,
+      feature_name: "Google Map Integration",
+      description:
+        "Add google map in nextjs app, add marker, add catchment, draw polygon",
+      status: TaskStatus.DONE,
+      date: formattedDate,
+      created_at: new Date().toISOString(),
+      order_index: 1,
+      priority: TaskPriority.MEDIUM,
+      estimated_hours: 6,
+      estimated_minutes: 0,
+    },
+    {
+      user_id: user.id,
+      feature_name: "AI Test Case Generation",
+      description:
+        "Implement AI-powered test case generation using Gemini API for automated test scenario creation",
+      status: TaskStatus.IN_PROGRESS,
+      date: formattedDate,
+      created_at: new Date().toISOString(),
+      order_index: 2,
+      priority: TaskPriority.HIGH,
+      estimated_hours: 8,
+      estimated_minutes: 0,
+    },
+    {
+      user_id: user.id,
+      feature_name: "Password Reset Feature",
+      description:
+        "Implement secure password reset functionality with email verification, temporary token generation, and password strength validation. Include rate limiting and security measures.",
+      status: TaskStatus.IN_PROGRESS,
+      date: formattedDate,
+      created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      order_index: 3,
+      priority: TaskPriority.HIGH,
+      estimated_hours: 3,
+      estimated_minutes: 0,
+      started_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      user_id: user.id,
+      feature_name: "User Profile Page",
+      description:
+        "Create a comprehensive user profile page with avatar upload, personal information management, activity history, and settings. Include responsive design and real-time updates.",
+      status: TaskStatus.UNTOUCHED,
+      date: formattedDate,
+      created_at: new Date().toISOString(),
+      order_index: 4,
+      priority: TaskPriority.MEDIUM,
+      estimated_hours: 5,
+      estimated_minutes: 0,
+    },
+  ];
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert(testTasks)
+    .select();
+
+  if (error) {
+    console.error("Error populating test data:", error);
+    return [];
+  }
+
+  console.log("Test data populated successfully:", data);
+
+  // Convert the response back to our Task format
+  return data.map((task: any) => ({
+    id: task.id,
+    featureName: task.feature_name,
+    description: task.description,
+    status: task.status as TaskStatus,
+    date: task.date,
+    createdAt: task.created_at,
+    order: task.order_index,
+    priority: task.priority,
+    estimatedHours: task.estimated_hours,
+    estimatedMinutes: task.estimated_minutes,
+    startedAt: task.started_at,
+  }));
+}
+
+// Clear all test data for the current user
+export async function clearTestData(): Promise<void> {
+  const supabase = createClientComponentClient();
+
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    console.log("No user found");
+    return;
+  }
+
+  const { error } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error clearing test data:", error);
+    throw error;
+  }
+
+  console.log("Test data cleared successfully");
+}
