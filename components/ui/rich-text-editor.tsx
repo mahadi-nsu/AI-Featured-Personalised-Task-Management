@@ -17,17 +17,20 @@ import {
   Highlighter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  externalInsertText?: React.MutableRefObject<((text: string) => void) | null>;
 }
 
 export function RichTextEditor({
   value,
   onChange,
   placeholder = "Start typing...",
+  externalInsertText,
 }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
@@ -77,6 +80,19 @@ export function RichTextEditor({
       onChange(editor.getHTML());
     },
   });
+
+  // Expose insertText function to parent via ref
+  useEffect(() => {
+    if (externalInsertText && editor) {
+      externalInsertText.current = (text: string) => {
+        editor.chain().focus().insertContent(text).run();
+      };
+    }
+    // Clean up on unmount
+    return () => {
+      if (externalInsertText) externalInsertText.current = null;
+    };
+  }, [externalInsertText, editor]);
 
   if (!editor) {
     return null;

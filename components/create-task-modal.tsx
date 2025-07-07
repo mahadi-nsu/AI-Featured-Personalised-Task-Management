@@ -10,9 +10,9 @@ import {
 } from "@/components/ui/dialog";
 import { RichTextEditor } from "./ui/rich-text-editor";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Task, TaskPriority, TaskStatus } from "@/lib/utils";
-import { Plus, Tag, Clock } from "lucide-react";
+import { Plus, Tag, Clock, Mic } from "lucide-react";
 import { createTaskInSupabase, fetchTasks } from "@/lib/taskStorage";
 import { toast } from "sonner";
 
@@ -54,6 +54,9 @@ export function CreateTaskModal({
   const [estimatedHours, setEstimatedHours] = useState(defaultEstimatedHours);
   const [estimatedMinutes, setEstimatedMinutes] = useState(
     defaultEstimatedMinutes
+  );
+  const descriptionInsertTextRef = useRef<((text: string) => void) | null>(
+    null
   );
 
   useEffect(() => {
@@ -142,6 +145,74 @@ export function CreateTaskModal({
     }
   };
 
+  // SpeechToTextButton: handles speech recognition and calls onResult with recognized text
+  function SpeechToTextButton({
+    onResult,
+    disabled,
+  }: {
+    onResult: (text: string) => void;
+    disabled?: boolean;
+  }) {
+    const [listening, setListening] = useState(false);
+    const recognitionRef = useRef<any>(null);
+
+    useEffect(() => {
+      if (typeof window !== "undefined" && !recognitionRef.current) {
+        const SpeechRecognition =
+          (window as any).SpeechRecognition ||
+          (window as any).webkitSpeechRecognition;
+        if (SpeechRecognition) {
+          recognitionRef.current = new SpeechRecognition();
+          recognitionRef.current.continuous = false;
+          recognitionRef.current.interimResults = false;
+          recognitionRef.current.lang = "en-US";
+        }
+      }
+      // eslint-disable-next-line
+    }, []);
+
+    const handleMicClick = () => {
+      if (!recognitionRef.current) {
+        toast.error("Speech recognition not supported in this browser.");
+        return;
+      }
+      if (listening) {
+        recognitionRef.current.stop();
+        setListening(false);
+        return;
+      }
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        onResult(transcript);
+        setListening(false);
+      };
+      recognitionRef.current.onerror = () => {
+        setListening(false);
+        toast.error("Speech recognition error.");
+      };
+      recognitionRef.current.onend = () => {
+        setListening(false);
+      };
+      setListening(true);
+      recognitionRef.current.start();
+    };
+
+    return (
+      <button
+        type="button"
+        onClick={handleMicClick}
+        disabled={disabled}
+        aria-label={listening ? "Stop listening" : "Start speech to text"}
+        className={`ml-2 p-1 rounded-full border ${
+          listening ? "bg-green-200 animate-pulse" : "bg-muted"
+        }`}
+        style={{ outline: listening ? "2px solid #22c55e" : undefined }}
+      >
+        <Mic className="h-5 w-5" color={listening ? "#22c55e" : undefined} />
+      </button>
+    );
+  }
+
   return (
     <Dialog open={externalIsOpen ?? isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
@@ -161,7 +232,7 @@ export function CreateTaskModal({
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
+            <div className="grid gap-2 relative">
               <Input
                 id="featureName"
                 placeholder="Feature/Bug Name..."
@@ -169,14 +240,35 @@ export function CreateTaskModal({
                 onChange={(e) => setFeatureName(e.target.value)}
                 required
               />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                <SpeechToTextButton
+                  onResult={(text) =>
+                    setFeatureName((prev) => prev + (prev ? " " : "") + text)
+                  }
+                  disabled={false}
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
+            <div className="grid gap-2 relative">
               <RichTextEditor
                 key={defaultDescription}
                 value={description}
                 onChange={setDescription}
                 placeholder="Task description..."
+                externalInsertText={descriptionInsertTextRef}
               />
+              <div className="absolute right-2 top-2 z-10">
+                <SpeechToTextButton
+                  onResult={(text) => {
+                    if (descriptionInsertTextRef.current) {
+                      descriptionInsertTextRef.current(text);
+                    } else {
+                      setDescription((prev) => prev + (prev ? " " : "") + text);
+                    }
+                  }}
+                  disabled={false}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
