@@ -3,79 +3,96 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Task, TaskStatus } from "@/lib/utils";
-import { loadTasks } from "@/lib/taskStorage";
-import { Tag, Clock } from "lucide-react";
+import { fetchCompletedTasks } from "@/lib/taskStorage";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
-export function CompletedTasks() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+interface CompletedTasksProps {
+  selectedDate: Date;
+  onGenerateTest: (
+    featureName: string,
+    description: string,
+    taskId: string
+  ) => void;
+  loadedTaskId: string | null;
+  isLoading: boolean;
+}
 
-  // Load tasks on component mount
+export function CompletedTasks({
+  selectedDate,
+  onGenerateTest,
+  loadedTaskId,
+  isLoading,
+}: CompletedTasksProps) {
+  const [allCompleted, setAllCompleted] = useState<Task[]>([]);
+  const [isFetching, setIsFetching] = useState(true);
+
   useEffect(() => {
-    const loadedTasks = loadTasks();
-    // Filter only completed tasks
-    const completedTasks = loadedTasks.filter(
-      (task) => task.status === TaskStatus.DONE
-    );
-    setTasks(completedTasks);
+    const getCompletedTasks = async () => {
+      setIsFetching(true);
+      try {
+        const completed = await fetchCompletedTasks();
+        setAllCompleted(completed);
+      } catch (error) {
+        console.error("Failed to fetch completed tasks", error);
+        toast.error("Could not load completed tasks.");
+      } finally {
+        setIsFetching(false);
+      }
+    };
+    getCompletedTasks();
   }, []);
 
-  // Get priority badge color
-  const getPriorityColor = (priority?: string) => {
-    switch (priority) {
-      case "HIGH":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "MEDIUM":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "LOW":
-        return "bg-green-100 text-green-800 border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
+  const tasks = allCompleted.filter((task) => {
+    if (!task.date) return false;
+    const taskDate = new Date(task.date);
+    return (
+      taskDate.getDate() === selectedDate.getDate() &&
+      taskDate.getMonth() === selectedDate.getMonth() &&
+      taskDate.getFullYear() === selectedDate.getFullYear()
+    );
+  });
 
-  // Format estimated time display
-  const getEstimatedTimeDisplay = (task: Task) => {
-    if (!task.estimatedHours && !task.estimatedMinutes) return null;
-    const parts = [];
-    if (task.estimatedHours) parts.push(`${task.estimatedHours}h`);
-    if (task.estimatedMinutes) parts.push(`${task.estimatedMinutes}m`);
-    return parts.join(" ");
-  };
+  if (isFetching) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {tasks.length === 0 ? (
-        <Card className="p-4">
-          <p className="text-muted-foreground">No completed tasks yet.</p>
+        <Card className="p-4 border-dashed">
+          <p className="text-center text-muted-foreground">
+            No completed tasks for this date.
+          </p>
         </Card>
       ) : (
         tasks.map((task) => (
-          <Card key={task.id} className="p-4">
-            <div className="flex flex-col gap-1">
-              <span className="font-medium text-base text-primary line-through">
+          <Card key={task.id} className="p-4 shadow-sm">
+            <div className="flex flex-col gap-2">
+              <span className="font-medium text-base text-primary">
                 {task.featureName}
               </span>
-              <span className="text-sm text-muted-foreground line-through">
-                {task.description}
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {task.priority && (
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit ${getPriorityColor(
-                      task.priority
-                    )}`}
-                  >
-                    <Tag className="h-3 w-3 mr-1" />
-                    {task.priority}
-                  </span>
-                )}
-                {getEstimatedTimeDisplay(task) && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {getEstimatedTimeDisplay(task)}
-                  </span>
-                )}
-              </div>
+              <div
+                className="text-sm text-muted-foreground prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: task.description }}
+              />
+              <Button
+                className="w-full mt-3"
+                variant={loadedTaskId === task.id ? "default" : "outline"}
+                onClick={() =>
+                  onGenerateTest(task.featureName, task.description, task.id)
+                }
+                disabled={isLoading || loadedTaskId === task.id}
+              >
+                {loadedTaskId === task.id
+                  ? "Test Case Generated"
+                  : "Generate AI Test Case"}
+              </Button>
             </div>
           </Card>
         ))

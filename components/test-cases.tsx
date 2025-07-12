@@ -4,11 +4,12 @@ import { Card } from "@/components/ui/card";
 import { Loader2, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, TaskPriority, TaskStatus } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { CreateTaskModal } from "@/components/create-task-modal";
 import { saveTasks, loadTasks } from "@/lib/taskStorage";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TestCase {
   id: string;
@@ -69,7 +70,6 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
               .trim()}".`,
           });
           setSelectedTestCase(testCase);
-          setIsCreateTaskModalOpen(true);
           break;
         case "inappropriate":
           toast.warning("Test marked as inappropriate", {
@@ -81,6 +81,13 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
       }
     }
   };
+
+  // Open modal after selectedTestCase is set
+  useEffect(() => {
+    if (selectedTestCase) {
+      setIsCreateTaskModalOpen(true);
+    }
+  }, [selectedTestCase]);
 
   const handleCreateTask = (task: {
     featureName: string;
@@ -151,9 +158,20 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <Card className="p-6 flex flex-col gap-4 items-center justify-center">
+        <div className="flex items-center gap-2 mb-2">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <span className="text-lg font-semibold text-primary">
+            Gemini is thinking...
+          </span>
+        </div>
+        <div className="w-full flex flex-col gap-3 mt-2">
+          <Skeleton className="h-6 w-3/4 mx-auto" />
+          <Skeleton className="h-4 w-5/6 mx-auto" />
+          <Skeleton className="h-4 w-2/3 mx-auto" />
+          <Skeleton className="h-4 w-1/2 mx-auto" />
+        </div>
+      </Card>
     );
   }
 
@@ -201,89 +219,73 @@ export function TestCases({ scenarios, isLoading }: TestCasesProps) {
                     )}
                   </ul>
                 </div>
-                <div className="mt-4">
+                <div>
                   <h4 className="text-sm font-medium text-foreground/80 mb-2">
-                    Expected Result:
+                    Expected:
                   </h4>
-                  {hasNumberedFormat(scenario.expected) ? (
-                    <ul className="list-none space-y-2 pl-4">
-                      {formatNumberedText(scenario.expected).map(
-                        (item, index) => (
-                          <li
-                            key={index}
-                            className="text-sm text-foreground/80"
-                          >
-                            {item.trim()}
-                          </li>
-                        )
-                      )}
-                    </ul>
-                  ) : (
-                    <p className="text-sm whitespace-pre-line pl-4 text-foreground/80">
-                      {scenario.expected.replace(/<br>/g, "")}
-                    </p>
-                  )}
+                  <p className="text-sm text-foreground/80">
+                    {scenario.expected}
+                  </p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                  <div className="flex gap-2">
-                    <Button
-                      className={cn(
-                        "flex-1",
-                        testStatuses[scenario.id] === "passed"
-                          ? "bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-800 ring-2 ring-green-600 dark:ring-green-500"
-                          : "bg-green-100 hover:bg-green-200 text-green-800 dark:bg-green-900/50 dark:hover:bg-green-900 dark:text-green-300"
-                      )}
-                      variant="outline"
-                      onClick={() => handleStatusChange(scenario.id, "passed")}
-                    >
-                      Test Passed
-                    </Button>
-                    <Button
-                      className={cn(
-                        "flex-1",
-                        testStatuses[scenario.id] === "failed"
-                          ? "bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-700 dark:hover:bg-purple-800 ring-2 ring-purple-600 dark:ring-purple-500"
-                          : "bg-purple-100 hover:bg-purple-200 text-purple-800 dark:bg-purple-900/50 dark:hover:bg-purple-900 dark:text-purple-300"
-                      )}
-                      variant="outline"
-                      onClick={() => handleStatusChange(scenario.id, "failed")}
-                    >
-                      Test Failed
-                    </Button>
-                  </div>
-                  <Button
-                    className={cn(
-                      "w-full sm:w-auto",
-                      testStatuses[scenario.id] === "inappropriate"
-                        ? "bg-gray-800 hover:bg-gray-900 text-white dark:bg-gray-700 dark:hover:bg-gray-800 ring-2 ring-gray-800 dark:ring-gray-600"
-                        : "bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300"
-                    )}
-                    variant="outline"
-                    onClick={() =>
-                      handleStatusChange(scenario.id, "inappropriate")
-                    }
-                  >
-                    Inappropriate test
-                  </Button>
-                </div>
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  size="sm"
+                  variant={
+                    testStatuses[scenario.id] === "passed"
+                      ? "default"
+                      : "outline"
+                  }
+                  onClick={() => handleStatusChange(scenario.id, "passed")}
+                >
+                  Mark as Passed
+                </Button>
+                <Button
+                  size="sm"
+                  variant={
+                    testStatuses[scenario.id] === "failed"
+                      ? "destructive"
+                      : "outline"
+                  }
+                  onClick={() => handleStatusChange(scenario.id, "failed")}
+                >
+                  Mark as Failed
+                </Button>
+                <Button
+                  size="sm"
+                  variant={
+                    testStatuses[scenario.id] === "inappropriate"
+                      ? "secondary"
+                      : "outline"
+                  }
+                  onClick={() =>
+                    handleStatusChange(scenario.id, "inappropriate")
+                  }
+                >
+                  Inappropriate
+                </Button>
               </div>
             </div>
           </Card>
         ))}
       </div>
-
-      {selectedTestCase && (
-        <CreateTaskModal
-          isOpen={isCreateTaskModalOpen}
-          onClose={() => {
-            setIsCreateTaskModalOpen(false);
-            setSelectedTestCase(null);
-          }}
-          onSubmit={handleCreateTask}
-          defaultFeatureName={selectedTestCase.description.split(".")[0].trim()}
-          defaultDescription={`Failed Test Case: ${selectedTestCase.description}\n\nExpected Result:\n${selectedTestCase.expected}`}
-        />
-      )}
+      <CreateTaskModal
+        key={selectedTestCase?.id || "no-case"}
+        isOpen={isCreateTaskModalOpen}
+        onClose={() => {
+          setIsCreateTaskModalOpen(false);
+          setSelectedTestCase(null);
+        }}
+        defaultFeatureName={selectedTestCase?.description || ""}
+        defaultDescription={
+          selectedTestCase
+            ? `Input Data:\n${selectedTestCase.inputData}\n\nExpected:\n${selectedTestCase.expected}`
+            : ""
+        }
+        defaultPriority={TaskPriority.MEDIUM}
+        defaultEstimatedHours={1}
+        defaultEstimatedMinutes={0}
+      />
     </>
   );
 }

@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export enum TaskStatus {
   UNTOUCHED = "Untouched",
-  IN_PROGRESS = "In Progress",
+  IN_PROGRESS = "IN_PROGRESS",
   DONE = "Done",
 }
 

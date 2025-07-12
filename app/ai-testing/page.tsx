@@ -1,7 +1,6 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CompletedTasks } from "../components/completed-tasks";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -13,8 +12,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useState, ReactNode } from "react";
-import { TestCases } from "../components/test-cases";
 import { toast } from "sonner";
+import { CompletedTasks } from "@/components/completed-tasks";
+import { TestCases } from "@/components/test-cases";
+
+export const dynamic = "force-dynamic";
 
 interface CardProps {
   title: string;

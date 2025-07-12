@@ -50,6 +50,11 @@ import {
   updateTask,
   deleteTask,
   updateTaskOrder,
+  fetchTasks,
+  updateTaskInSupabase,
+  updateTasksOrderInSupabase,
+  populateTestData,
+  clearTestData,
 } from "@/lib/taskStorage";
 import {
   DndContext,
@@ -76,6 +81,9 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { CreateTaskModal } from "@/components/create-task-modal";
+import { TaskFormModal } from "./task-form-modal";
 
 // View modes
 type ViewMode = "list" | "kanban";
@@ -186,38 +194,64 @@ function SortableTaskItem({
     return parts.join(" ");
   };
 
-  const updateTaskStatus = (task: Task, status: TaskStatus) => {
-    const updatedTasks = updateTask(task.id, { status });
-    setTasks(updatedTasks);
+  const updateTaskStatus = async (task: Task, status: TaskStatus) => {
+    // Optimistically update the UI
+    const optimisticTasks = tasks.map((t) =>
+      t.id === task.id ? { ...t, status } : t
+    );
+    setTasks(optimisticTasks);
 
-    const statusMessages = {
-      [TaskStatus.UNTOUCHED]: "marked as untouched",
-      [TaskStatus.IN_PROGRESS]: "moved to in progress",
-      [TaskStatus.DONE]: "marked as completed",
-    };
+    try {
+      const updatedTasks = await updateTaskInSupabase(task.id, { status });
 
-    toast.success("Task status updated", {
-      description: `"${task.featureName}" has been ${statusMessages[status]}.`,
-    });
+      if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
+        setTasks(updatedTasks);
+        toast.success("Task status updated", {
+          description: `"${task.featureName}" has been ${
+            status === TaskStatus.UNTOUCHED
+              ? "marked as untouched"
+              : status === TaskStatus.IN_PROGRESS
+              ? "moved to in progress"
+              : "marked as completed"
+          }.`,
+        });
+      } else {
+        // If update fails, fetch latest state from server
+        const latestTasks = await fetchTasks();
+        setTasks(latestTasks);
+        toast.error("Failed to update task status");
+      }
+    } catch (error) {
+      console.error("Error updating task status:", error);
+      // Fetch latest state from server
+      const latestTasks = await fetchTasks();
+      setTasks(latestTasks);
+      toast.error("Failed to update task status");
+    }
   };
 
   const startDelete = (task: Task) => {
     setDeletingTask(task);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deletingTask) {
-      const updatedTasks = deleteTask(deletingTask.id);
-      setDeletingTask(null);
-      setTasks(updatedTasks);
-      toast.success("Task deleted successfully", {
-        description: `"${deletingTask.featureName}" has been removed from your task list.`,
-      });
+      try {
+        const updatedTasks = await deleteTask(deletingTask.id);
+        setDeletingTask(null);
+        setTasks(updatedTasks);
+        toast.success("Task deleted successfully", {
+          description: `"${deletingTask.featureName}" has been removed from your task list.`,
+        });
+      } catch (error) {
+        console.error("Error deleting task:", error);
+        toast.error("Failed to delete task");
+      }
     }
   };
 
   const startEditing = (task: Task) => {
-    setEditingTask(task);
+    setEditingTask({ ...task });
     setEditedFeatureName(task.featureName);
     setEditedDescription(task.description);
     setEditedPriority(task.priority);
@@ -225,20 +259,25 @@ function SortableTaskItem({
     setEditedMinutes(task.estimatedMinutes || 0);
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (editingTask && editedFeatureName.trim() && editedDescription.trim()) {
-      const updatedTasks = updateTask(editingTask.id, {
-        featureName: editedFeatureName.trim(),
-        description: editedDescription.trim(),
-        priority: editedPriority,
-        estimatedHours: editedHours || undefined,
-        estimatedMinutes: editedMinutes || undefined,
-      });
-      setEditingTask(null);
-      setTasks(updatedTasks);
-      toast.success("Task updated successfully", {
-        description: `"${editedFeatureName}" has been updated.`,
-      });
+      try {
+        const updatedTasks = await updateTaskInSupabase(editingTask.id, {
+          featureName: editedFeatureName.trim(),
+          description: editedDescription.trim(),
+          priority: editedPriority,
+          estimatedHours: editedHours || undefined,
+          estimatedMinutes: editedMinutes || undefined,
+        });
+        setEditingTask(null);
+        setTasks(updatedTasks);
+        toast.success("Task updated successfully", {
+          description: `"${editedFeatureName}" has been updated.`,
+        });
+      } catch (error) {
+        console.error("Error updating task:", error);
+        toast.error("Failed to update task");
+      }
     }
   };
 
@@ -247,10 +286,18 @@ function SortableTaskItem({
     if (task.status === TaskStatus.IN_PROGRESS) {
       // Set start time if not already set
       if (!task.startedAt) {
-        const updatedTasks = updateTask(task.id, {
-          startedAt: new Date().toISOString(),
-        });
-        setTasks(updatedTasks);
+        const setStartTime = async () => {
+          try {
+            const updatedTasks = await updateTaskInSupabase(task.id, {
+              startedAt: new Date().toISOString(),
+            });
+            setTasks(updatedTasks);
+          } catch (error) {
+            console.error("Failed to set task start time:", error);
+            toast.error("Failed to start timer for task");
+          }
+        };
+        setStartTime();
       }
 
       // Check initial remaining time and play sound if needed
@@ -331,13 +378,12 @@ function SortableTaskItem({
               <span className="font-medium text-base text-primary truncate">
                 {task.featureName}
               </span>
-              <span
+              <div
                 className={`text-sm text-muted-foreground ${
                   task.status === TaskStatus.DONE ? "line-through" : ""
                 }`}
-              >
-                {task.description}
-              </span>
+                dangerouslySetInnerHTML={{ __html: task.description }}
+              />
               <div className="flex flex-wrap gap-2 mt-1">
                 {task.priority && (
                   <span
@@ -406,8 +452,8 @@ function SortableTaskItem({
             <div className="flex items-center gap-2">
               <Select
                 value={task.status}
-                onValueChange={(value) =>
-                  updateTaskStatus(task, value as TaskStatus)
+                onValueChange={async (value) =>
+                  await updateTaskStatus(task, value as TaskStatus)
                 }
               >
                 <SelectTrigger
@@ -447,135 +493,45 @@ function SortableTaskItem({
       </div>
 
       {/* Edit Dialog */}
-      <Dialog
+      <TaskFormModal
+        key={editingTask?.id}
         open={editingTask !== null}
-        onOpenChange={() => setEditingTask(null)}
-      >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Task</DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <Input
-              value={editedFeatureName}
-              onChange={(e) => setEditedFeatureName(e.target.value)}
-              placeholder="Edit feature/bug name..."
-              className="w-full"
-            />
-            <Textarea
-              value={editedDescription}
-              onChange={(e) => setEditedDescription(e.target.value)}
-              placeholder="Edit description..."
-              className="w-full min-h-[100px]"
-            />
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center">
-                <Tag className="h-4 w-4 mr-1" />
-                Priority
-              </label>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.HIGH ? "default" : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.HIGH
-                      ? "bg-red-500 hover:bg-red-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.HIGH)}
-                >
-                  High
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.MEDIUM
-                      ? "default"
-                      : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.MEDIUM
-                      ? "bg-yellow-500 hover:bg-yellow-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.MEDIUM)}
-                >
-                  Medium
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.LOW ? "default" : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.LOW
-                      ? "bg-green-500 hover:bg-green-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.LOW)}
-                >
-                  Low
-                </Button>
-                {editedPriority && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setEditedPriority(undefined)}
-                  >
-                    No Priority
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center">
-                <Clock className="h-4 w-4 mr-1" />
-                Estimated Time
-              </label>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    value={editedHours}
-                    onChange={(e) =>
-                      setEditedHours(parseInt(e.target.value) || 0)
-                    }
-                    className="w-20"
-                  />
-                  <span className="text-sm whitespace-nowrap">hours</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={editedMinutes}
-                    onChange={(e) =>
-                      setEditedMinutes(parseInt(e.target.value) || 0)
-                    }
-                    className="w-20"
-                  />
-                  <span className="text-sm whitespace-nowrap">minutes</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingTask(null)}>
-              Cancel
-            </Button>
-            <Button onClick={saveEdit}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        mode="edit"
+        initialValues={
+          editingTask
+            ? {
+                featureName: editingTask.featureName,
+                description: editingTask.description,
+                priority: editingTask.priority,
+                estimatedHours: editingTask.estimatedHours || 0,
+                estimatedMinutes: editingTask.estimatedMinutes || 0,
+                id: editingTask.id,
+                status: editingTask.status,
+                date: editingTask.date,
+                createdAt: editingTask.createdAt,
+              }
+            : {}
+        }
+        onSubmit={async (values) => {
+          if (editingTask) {
+            try {
+              const updatedTasks = await updateTaskInSupabase(
+                editingTask.id,
+                values
+              );
+              setEditingTask(null);
+              setTasks(updatedTasks);
+              toast.success("Task updated successfully", {
+                description: `"${values.featureName}" has been updated.`,
+              });
+            } catch (error) {
+              console.error("Error updating task:", error);
+              toast.error("Failed to update task");
+            }
+          }
+        }}
+        onClose={() => setEditingTask(null)}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog
@@ -587,8 +543,7 @@ function SortableTaskItem({
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              task &quot;{deletingTask?.featureName} -{" "}
-              {deletingTask?.description}&quot;.
+              task &quot;{deletingTask?.featureName}&quot;.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -677,38 +632,64 @@ function KanbanTaskItem({
     return parts.join(" ");
   };
 
-  const updateTaskStatus = (task: Task, status: TaskStatus) => {
-    const updatedTasks = updateTask(task.id, { status });
-    setTasks(updatedTasks);
+  const updateTaskStatus = async (task: Task, status: TaskStatus) => {
+    // Optimistically update the UI
+    const optimisticTasks = tasks.map((t) =>
+      t.id === task.id ? { ...t, status } : t
+    );
+    setTasks(optimisticTasks);
 
-    const statusMessages = {
-      [TaskStatus.UNTOUCHED]: "marked as untouched",
-      [TaskStatus.IN_PROGRESS]: "moved to in progress",
-      [TaskStatus.DONE]: "marked as completed",
-    };
+    try {
+      const updatedTasks = await updateTaskInSupabase(task.id, { status });
 
-    toast.success("Task status updated", {
-      description: `"${task.featureName}" has been ${statusMessages[status]}.`,
-    });
+      if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
+        setTasks(updatedTasks);
+        toast.success("Task status updated", {
+          description: `"${task.featureName}" has been ${
+            status === TaskStatus.UNTOUCHED
+              ? "marked as untouched"
+              : status === TaskStatus.IN_PROGRESS
+              ? "moved to in progress"
+              : "marked as completed"
+          }.`,
+        });
+      } else {
+        // If update fails, fetch latest state from server
+        const latestTasks = await fetchTasks();
+        setTasks(latestTasks);
+        toast.error("Failed to update task status");
+      }
+    } catch (error) {
+      console.error("Error updating task status:", error);
+      // Fetch latest state from server
+      const latestTasks = await fetchTasks();
+      setTasks(latestTasks);
+      toast.error("Failed to update task status");
+    }
   };
 
   const startDelete = (task: Task) => {
     setDeletingTask(task);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deletingTask) {
-      const updatedTasks = deleteTask(deletingTask.id);
-      setDeletingTask(null);
-      setTasks(updatedTasks);
-      toast.success("Task deleted successfully", {
-        description: `"${deletingTask.featureName}" has been removed from your task list.`,
-      });
+      try {
+        const updatedTasks = await deleteTask(deletingTask.id);
+        setDeletingTask(null);
+        setTasks(updatedTasks);
+        toast.success("Task deleted successfully", {
+          description: `"${deletingTask.featureName}" has been removed from your task list.`,
+        });
+      } catch (error) {
+        console.error("Error deleting task:", error);
+        toast.error("Failed to delete task");
+      }
     }
   };
 
   const startEditing = (task: Task) => {
-    setEditingTask(task);
+    setEditingTask({ ...task });
     setEditedFeatureName(task.featureName);
     setEditedDescription(task.description);
     setEditedPriority(task.priority);
@@ -716,20 +697,25 @@ function KanbanTaskItem({
     setEditedMinutes(task.estimatedMinutes || 0);
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (editingTask && editedFeatureName.trim() && editedDescription.trim()) {
-      const updatedTasks = updateTask(editingTask.id, {
-        featureName: editedFeatureName.trim(),
-        description: editedDescription.trim(),
-        priority: editedPriority,
-        estimatedHours: editedHours || undefined,
-        estimatedMinutes: editedMinutes || undefined,
-      });
-      setEditingTask(null);
-      setTasks(updatedTasks);
-      toast.success("Task updated successfully", {
-        description: `"${editedFeatureName}" has been updated.`,
-      });
+      try {
+        const updatedTasks = await updateTaskInSupabase(editingTask.id, {
+          featureName: editedFeatureName.trim(),
+          description: editedDescription.trim(),
+          priority: editedPriority,
+          estimatedHours: editedHours || undefined,
+          estimatedMinutes: editedMinutes || undefined,
+        });
+        setEditingTask(null);
+        setTasks(updatedTasks);
+        toast.success("Task updated successfully", {
+          description: `"${editedFeatureName}" has been updated.`,
+        });
+      } catch (error) {
+        console.error("Error updating task:", error);
+        toast.error("Failed to update task");
+      }
     }
   };
 
@@ -738,10 +724,18 @@ function KanbanTaskItem({
     if (task.status === TaskStatus.IN_PROGRESS) {
       // Set start time if not already set
       if (!task.startedAt) {
-        const updatedTasks = updateTask(task.id, {
-          startedAt: new Date().toISOString(),
-        });
-        setTasks(updatedTasks);
+        const setStartTime = async () => {
+          try {
+            const updatedTasks = await updateTaskInSupabase(task.id, {
+              startedAt: new Date().toISOString(),
+            });
+            setTasks(updatedTasks);
+          } catch (error) {
+            console.error("Failed to set task start time:", error);
+            toast.error("Failed to start timer for task");
+          }
+        };
+        setStartTime();
       }
 
       // Check initial remaining time and play sound if needed
@@ -818,13 +812,12 @@ function KanbanTaskItem({
                 <span className="font-medium text-base text-primary block mb-1">
                   {task.featureName}
                 </span>
-                <span
+                <div
                   className={`text-sm text-muted-foreground block ${
                     task.status === TaskStatus.DONE ? "line-through" : ""
                   }`}
-                >
-                  {task.description}
-                </span>
+                  dangerouslySetInnerHTML={{ __html: task.description }}
+                />
                 <div className="flex flex-wrap gap-2 mt-1">
                   {task.priority && (
                     <span
@@ -892,8 +885,8 @@ function KanbanTaskItem({
                 <div className="flex items-center gap-2">
                   <Select
                     value={task.status}
-                    onValueChange={(value) =>
-                      updateTaskStatus(task, value as TaskStatus)
+                    onValueChange={async (value) =>
+                      await updateTaskStatus(task, value as TaskStatus)
                     }
                   >
                     <SelectTrigger
@@ -935,135 +928,45 @@ function KanbanTaskItem({
       </div>
 
       {/* Edit Dialog */}
-      <Dialog
+      <TaskFormModal
+        key={editingTask?.id}
         open={editingTask !== null}
-        onOpenChange={() => setEditingTask(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Task</DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <Input
-              value={editedFeatureName}
-              onChange={(e) => setEditedFeatureName(e.target.value)}
-              placeholder="Edit feature/bug name..."
-              className="w-full"
-            />
-            <Textarea
-              value={editedDescription}
-              onChange={(e) => setEditedDescription(e.target.value)}
-              placeholder="Edit description..."
-              className="w-full min-h-[100px]"
-            />
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center">
-                <Tag className="h-4 w-4 mr-1" />
-                Priority
-              </label>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.HIGH ? "default" : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.HIGH
-                      ? "bg-red-500 hover:bg-red-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.HIGH)}
-                >
-                  High
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.MEDIUM
-                      ? "default"
-                      : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.MEDIUM
-                      ? "bg-yellow-500 hover:bg-yellow-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.MEDIUM)}
-                >
-                  Medium
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    editedPriority === TaskPriority.LOW ? "default" : "outline"
-                  }
-                  className={
-                    editedPriority === TaskPriority.LOW
-                      ? "bg-green-500 hover:bg-green-600"
-                      : ""
-                  }
-                  onClick={() => setEditedPriority(TaskPriority.LOW)}
-                >
-                  Low
-                </Button>
-                {editedPriority && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setEditedPriority(undefined)}
-                  >
-                    No Priority
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center">
-                <Clock className="h-4 w-4 mr-1" />
-                Estimated Time
-              </label>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    value={editedHours}
-                    onChange={(e) =>
-                      setEditedHours(parseInt(e.target.value) || 0)
-                    }
-                    className="w-20"
-                  />
-                  <span className="text-sm whitespace-nowrap">hours</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={editedMinutes}
-                    onChange={(e) =>
-                      setEditedMinutes(parseInt(e.target.value) || 0)
-                    }
-                    className="w-20"
-                  />
-                  <span className="text-sm whitespace-nowrap">minutes</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingTask(null)}>
-              Cancel
-            </Button>
-            <Button onClick={saveEdit}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        mode="edit"
+        initialValues={
+          editingTask
+            ? {
+                featureName: editingTask.featureName,
+                description: editingTask.description,
+                priority: editingTask.priority,
+                estimatedHours: editingTask.estimatedHours || 0,
+                estimatedMinutes: editingTask.estimatedMinutes || 0,
+                id: editingTask.id,
+                status: editingTask.status,
+                date: editingTask.date,
+                createdAt: editingTask.createdAt,
+              }
+            : {}
+        }
+        onSubmit={async (values) => {
+          if (editingTask) {
+            try {
+              const updatedTasks = await updateTaskInSupabase(
+                editingTask.id,
+                values
+              );
+              setEditingTask(null);
+              setTasks(updatedTasks);
+              toast.success("Task updated successfully", {
+                description: `"${values.featureName}" has been updated.`,
+              });
+            } catch (error) {
+              console.error("Error updating task:", error);
+              toast.error("Failed to update task");
+            }
+          }
+        }}
+        onClose={() => setEditingTask(null)}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog
@@ -1075,8 +978,7 @@ function KanbanTaskItem({
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              task &quot;{deletingTask?.featureName} -{" "}
-              {deletingTask?.description}&quot;.
+              task &quot;{deletingTask?.featureName}&quot;.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1166,13 +1068,12 @@ function DraggedTaskItem({ task }: { task: Task }) {
             <span className="font-medium text-base text-primary">
               {task.featureName}
             </span>
-            <span
+            <div
               className={`text-sm text-muted-foreground ${
                 task.status === TaskStatus.DONE ? "line-through" : ""
               }`}
-            >
-              {task.description}
-            </span>
+              dangerouslySetInnerHTML={{ __html: task.description }}
+            />
             <div className="flex flex-wrap gap-2">
               {task.priority && (
                 <span
@@ -1206,15 +1107,16 @@ export function TodaysTasks() {
   const [priority, setPriority] = useState<TaskPriority | undefined>(undefined);
   const [estimatedHours, setEstimatedHours] = useState<number>(0);
   const [estimatedMinutes, setEstimatedMinutes] = useState<number>(0);
+  const [description, setDescription] = useState("");
   const { register, handleSubmit, reset } = useForm<{
     featureName: string;
-    description: string;
   }>();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "all">(
     "all"
   );
+  const [isLoadingTestData, setIsLoadingTestData] = useState(false);
 
   // Setup sensors for drag and drop
   const sensors = useSensors(
@@ -1230,9 +1132,13 @@ export function TodaysTasks() {
 
   // Load tasks on component mount
   useEffect(() => {
-    const loadedTasks = loadTasks();
-    console.log("TodaysTasks - Loaded tasks:", loadedTasks);
-    setTasks(loadedTasks);
+    const loadTasksFromSupabase = async () => {
+      const loadedTasks = await fetchTasks();
+      console.log("TodaysTasks - Loaded tasks:", loadedTasks);
+      setTasks(loadedTasks);
+    };
+
+    loadTasksFromSupabase();
   }, []);
 
   // Get today's tasks
@@ -1304,7 +1210,7 @@ export function TodaysTasks() {
     (task) => task.status === TaskStatus.DONE
   );
 
-  const createTask = (data: { featureName: string; description: string }) => {
+  const createTask = (data: { featureName: string }) => {
     const today = new Date();
     const formattedDate = `${today.getFullYear()}-${String(
       today.getMonth() + 1
@@ -1313,7 +1219,7 @@ export function TodaysTasks() {
     const newTask: Task = {
       id: crypto.randomUUID(),
       featureName: data.featureName,
-      description: data.description,
+      description: description,
       status: TaskStatus.UNTOUCHED,
       date: formattedDate,
       createdAt: new Date().toISOString(),
@@ -1332,9 +1238,43 @@ export function TodaysTasks() {
 
     // Reset form
     reset();
+    setDescription("");
     setPriority(undefined);
     setEstimatedHours(0);
     setEstimatedMinutes(0);
+  };
+
+  const handlePopulateTestData = async () => {
+    setIsLoadingTestData(true);
+    try {
+      const testTasks = await populateTestData();
+      setTasks(testTasks);
+      toast.success("Test data populated successfully!", {
+        description: "You can now explore the app features with sample tasks.",
+      });
+    } catch (error) {
+      console.error("Error populating test data:", error);
+      toast.error("Failed to populate test data", {
+        description: "Please try again later.",
+      });
+    } finally {
+      setIsLoadingTestData(false);
+    }
+  };
+
+  const handleClearTestData = async () => {
+    try {
+      await clearTestData();
+      setTasks([]);
+      toast.success("Test data cleared successfully!", {
+        description: "You can now start with your own tasks.",
+      });
+    } catch (error) {
+      console.error("Error clearing test data:", error);
+      toast.error("Failed to clear test data", {
+        description: "Please try again later.",
+      });
+    }
   };
 
   // Handle drag start
@@ -1398,7 +1338,7 @@ export function TodaysTasks() {
   };
 
   // Handle drag end for list view
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
     setActiveTask(null);
@@ -1409,8 +1349,6 @@ export function TodaysTasks() {
       const activeId = String(active.id);
       const overId = String(over.id);
 
-      console.log(`Drag ended: ${activeId} over ${overId}`);
-
       // Handle list mode drag end
       if (viewMode === "list") {
         // Find the tasks in the array
@@ -1420,19 +1358,48 @@ export function TodaysTasks() {
         const overIndex = todaysTasks.findIndex((task) => task.id === overId);
 
         if (activeIndex !== -1 && overIndex !== -1) {
-          // Get the new order of task IDs
+          // Get the new order of tasks
           const newTasks = arrayMove(todaysTasks, activeIndex, overIndex);
-          const newTaskIds = newTasks.map((task) => task.id);
 
-          // Get today's date in yyyy-MM-dd format
-          const today = new Date();
-          const todayStr = `${today.getFullYear()}-${String(
-            today.getMonth() + 1
-          ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+          // Optimistically update the UI
+          setTasks((prevTasks) => {
+            const updatedTasks = [...prevTasks];
+            // Update order for all tasks in the same date group
+            newTasks.forEach((task, index) => {
+              const taskIndex = updatedTasks.findIndex((t) => t.id === task.id);
+              if (taskIndex !== -1) {
+                updatedTasks[taskIndex] = {
+                  ...updatedTasks[taskIndex],
+                  order: index,
+                };
+              }
+            });
+            return updatedTasks;
+          });
 
-          // Update the order in storage
-          const updatedTasks = updateTaskOrder(todayStr, newTaskIds);
-          setTasks(updatedTasks);
+          try {
+            // Update orders in Supabase
+            const taskUpdates = newTasks.map((task, index) => ({
+              id: task.id,
+              order: index,
+            }));
+            const updatedTasks = await updateTasksOrderInSupabase(taskUpdates);
+
+            if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
+              setTasks(updatedTasks);
+            } else {
+              // If update fails, fetch latest state from server
+              const latestTasks = await fetchTasks();
+              setTasks(latestTasks);
+              toast.error("Failed to update task order");
+            }
+          } catch (error) {
+            console.error("Error updating task order:", error);
+            // Fetch latest state from server
+            const latestTasks = await fetchTasks();
+            setTasks(latestTasks);
+            toast.error("Failed to update task order");
+          }
         }
       }
       // Handle kanban mode drag end
@@ -1459,8 +1426,34 @@ export function TodaysTasks() {
 
           // If status has changed, update it
           if (task.status !== newStatus) {
-            const updatedTasks = updateTask(task.id, { status: newStatus });
-            setTasks(updatedTasks);
+            // Optimistically update the UI
+            const optimisticTasks = tasks.map((t) =>
+              t.id === task.id ? { ...t, status: newStatus } : t
+            );
+            setTasks(optimisticTasks);
+
+            try {
+              const updatedTasks = await updateTaskInSupabase(task.id, {
+                status: newStatus,
+              });
+              if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
+                setTasks(updatedTasks);
+                toast.success("Task status updated", {
+                  description: `"${task.featureName}" has been moved to ${newStatus}.`,
+                });
+              } else {
+                // If update fails, fetch latest state from server
+                const latestTasks = await fetchTasks();
+                setTasks(latestTasks);
+                toast.error("Failed to update task status");
+              }
+            } catch (error) {
+              console.error("Error updating task status:", error);
+              // Fetch latest state from server
+              const latestTasks = await fetchTasks();
+              setTasks(latestTasks);
+              toast.error("Failed to update task status");
+            }
           }
         } else {
           // Dragging over another task
@@ -1469,58 +1462,93 @@ export function TodaysTasks() {
 
           // If dragging between different columns (status change)
           if (task.status !== overTask.status) {
-            const updatedTasks = updateTask(task.id, {
-              status: overTask.status,
-            });
-            setTasks(updatedTasks);
+            const newStatus = overTask.status;
+            // Optimistically update the UI
+            const optimisticTasks = tasks.map((t) =>
+              t.id === task.id ? { ...t, status: newStatus } : t
+            );
+            setTasks(optimisticTasks);
+
+            try {
+              const updatedTasks = await updateTaskInSupabase(task.id, {
+                status: newStatus,
+              });
+              if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
+                setTasks(updatedTasks);
+                toast.success("Task status updated", {
+                  description: `"${task.featureName}" has been moved to ${newStatus}.`,
+                });
+              } else {
+                // If update fails, fetch latest state from server
+                const latestTasks = await fetchTasks();
+                setTasks(latestTasks);
+                toast.error("Failed to update task status");
+              }
+            } catch (error) {
+              console.error("Error updating task status:", error);
+              // Fetch latest state from server
+              const latestTasks = await fetchTasks();
+              setTasks(latestTasks);
+              toast.error("Failed to update task status");
+            }
           }
           // If reordering within the same column
           else {
-            // Get tasks with the same status
-            const columnTasks = todaysTasks.filter(
-              (t) => t.status === task.status
-            );
-
-            // Find indices within the column
-            const activeIndex = columnTasks.findIndex((t) => t.id === activeId);
-            const overIndex = columnTasks.findIndex((t) => t.id === overId);
+            // Reordering within the same column
+            const activeIndex = todaysTasks.findIndex((t) => t.id === activeId);
+            const overIndex = todaysTasks.findIndex((t) => t.id === overId);
 
             if (activeIndex !== -1 && overIndex !== -1) {
-              // Get the new order using arrayMove
-              const newColumnTasks = arrayMove(
-                columnTasks,
-                activeIndex,
-                overIndex
-              );
+              const newTasks = arrayMove(todaysTasks, activeIndex, overIndex);
 
-              // Create a new array with all tasks, maintain order for other statuses
-              const reorderedTasks = [...tasks];
-
-              // Update the order of each task in the affected column
-              newColumnTasks.forEach((t, idx) => {
-                const taskIndex = reorderedTasks.findIndex(
-                  (rt) => rt.id === t.id
+              // Optimistically update the UI
+              setTasks((prevTasks) => {
+                const nonTodaysTaskIds = new Set(
+                  prevTasks
+                    .filter((p) => !todaysTasks.some((t) => t.id === p.id))
+                    .map((t) => t.id)
                 );
-                if (taskIndex !== -1) {
-                  reorderedTasks[taskIndex] = {
-                    ...reorderedTasks[taskIndex],
-                    order: idx,
-                  };
-                }
+                const nonTodaysTaskList = prevTasks.filter((t) =>
+                  nonTodaysTaskIds.has(t.id)
+                );
+                const updatedTodaysTasks = newTasks.map((t, index) => ({
+                  ...t,
+                  order: index,
+                }));
+                return [...nonTodaysTaskList, ...updatedTodaysTasks];
               });
 
-              // Get today's date in yyyy-MM-dd format
-              const today = new Date();
-              const todayStr = `${today.getFullYear()}-${String(
-                today.getMonth() + 1
-              ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+              try {
+                // Update orders in Supabase
+                const taskUpdates = newTasks.map((task, index) => ({
+                  id: task.id,
+                  order: index,
+                }));
+                const updatedTasks = await updateTasksOrderInSupabase(
+                  taskUpdates
+                );
 
-              // Update the order in storage
-              const updatedTasks = updateTaskOrder(
-                todayStr,
-                reorderedTasks.map((t) => t.id)
-              );
-              setTasks(updatedTasks);
+                if (Array.isArray(updatedTasks) && updatedTasks.length > 0) {
+                  setTasks(updatedTasks); // Set the final state from DB
+                } else {
+                  throw new Error("Invalid response from server");
+                }
+              } catch (error) {
+                console.error("Error updating task order:", error);
+                // Revert on error
+                setTasks((prevTasks) => {
+                  const nonTodaysTaskIds = new Set(
+                    prevTasks
+                      .filter((p) => !todaysTasks.some((t) => t.id === p.id))
+                      .map((t) => t.id)
+                  );
+                  const nonTodaysTaskList = prevTasks.filter((t) =>
+                    nonTodaysTaskIds.has(t.id)
+                  );
+                  return [...nonTodaysTaskList, ...todaysTasks];
+                });
+                toast.error("Failed to update task order");
+              }
             }
           }
         }
@@ -1531,160 +1559,61 @@ export function TodaysTasks() {
   return (
     <>
       <div className="w-full mx-auto p-6 space-y-8">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <CalendarClock className="h-4 w-4 mr-1" />
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
+          <div className="flex items-center text-sm relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/10 rounded-full blur-sm group-hover:from-primary/30 group-hover:to-primary/20 transition-all duration-300"></div>
+            <div className="relative flex items-center bg-background/80 backdrop-blur-sm px-4 py-2 rounded-full border border-primary/20 group-hover:border-primary/30 transition-all duration-300">
+              <CalendarClock className="h-4 w-4 mr-2 text-primary group-hover:scale-110 transition-transform duration-200" />
+              <span className="font-medium text-foreground/90">
+                {new Date().toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </span>
+            </div>
           </div>
-          <div className="flex border rounded-md overflow-hidden">
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              className="rounded-none"
-              onClick={() => setViewMode("list")}
-            >
-              <ListTodo className="h-4 w-4 mr-1" />
-              List
-            </Button>
-            <Button
-              variant={viewMode === "kanban" ? "default" : "ghost"}
-              size="sm"
-              className="rounded-none"
-              onClick={() => setViewMode("kanban")}
-            >
-              <Trello className="h-4 w-4 mr-1" />
-              Board
-            </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex border rounded-md overflow-hidden">
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="sm"
+                className="rounded-none"
+                onClick={() => setViewMode("list")}
+              >
+                <ListTodo className="h-4 w-4 mr-1" />
+                List
+              </Button>
+              <Button
+                variant={viewMode === "kanban" ? "default" : "ghost"}
+                size="sm"
+                className="rounded-none"
+                onClick={() => setViewMode("kanban")}
+              >
+                <Trello className="h-4 w-4 mr-1" />
+                Board
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              {todaysTasks.length > 0 && (
+                <Button
+                  onClick={handleClearTestData}
+                  variant="outline"
+                  size="sm"
+                  className="bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 hover:text-yellow-900 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700 dark:hover:bg-yellow-900/50"
+                >
+                  Clear Test Data
+                </Button>
+              )}
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-primary/50 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
+                <CreateTaskModal onTaskCreated={setTasks} />
+              </div>
+            </div>
           </div>
         </div>
 
-        <Card className="p-6 shadow-sm">
-          <form onSubmit={handleSubmit(createTask)} className="space-y-4">
-            <div className="flex flex-col gap-4">
-              <Input
-                placeholder="Feature/Bug Name..."
-                {...register("featureName", { required: true })}
-                className="flex-1"
-              />
-              <div className="flex items-center gap-4">
-                <Textarea
-                  placeholder="Feature/Bug Description..."
-                  {...register("description", { required: true })}
-                  className="flex-1 min-h-[100px]"
-                />
-                <Button type="submit" size="icon">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <span className="text-sm text-muted-foreground flex items-center">
-                  <Tag className="h-4 w-4 mr-1" />
-                  Priority:
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={
-                      priority === TaskPriority.HIGH ? "default" : "outline"
-                    }
-                    className={
-                      priority === TaskPriority.HIGH
-                        ? "bg-red-500 hover:bg-red-600"
-                        : ""
-                    }
-                    onClick={() => setPriority(TaskPriority.HIGH)}
-                  >
-                    High
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={
-                      priority === TaskPriority.MEDIUM ? "default" : "outline"
-                    }
-                    className={
-                      priority === TaskPriority.MEDIUM
-                        ? "bg-yellow-500 hover:bg-yellow-600"
-                        : ""
-                    }
-                    onClick={() => setPriority(TaskPriority.MEDIUM)}
-                  >
-                    Medium
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={
-                      priority === TaskPriority.LOW ? "default" : "outline"
-                    }
-                    className={
-                      priority === TaskPriority.LOW
-                        ? "bg-green-500 hover:bg-green-600"
-                        : ""
-                    }
-                    onClick={() => setPriority(TaskPriority.LOW)}
-                  >
-                    Low
-                  </Button>
-                  {priority && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setPriority(undefined)}
-                    >
-                      Clear
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <span className="text-sm text-muted-foreground flex items-center">
-                  <Clock className="h-4 w-4 mr-1" />
-                  Estimated Time:
-                </span>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      min="0"
-                      value={estimatedHours}
-                      onChange={(e) =>
-                        setEstimatedHours(parseInt(e.target.value) || 0)
-                      }
-                      className="w-20"
-                    />
-                    <span className="text-sm whitespace-nowrap">hours</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      min="0"
-                      max="59"
-                      value={estimatedMinutes}
-                      onChange={(e) =>
-                        setEstimatedMinutes(parseInt(e.target.value) || 0)
-                      }
-                      className="w-20"
-                    />
-                    <span className="text-sm whitespace-nowrap">minutes</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </form>
-        </Card>
-
-        {/* Search and Filter Section */}
         <Card className="p-4 shadow-sm bg-blue-50/50 dark:bg-blue-950/50 border-blue-100 dark:border-blue-900">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search */}
@@ -1740,10 +1669,49 @@ export function TodaysTasks() {
 
         <div className="space-y-4">
           {filteredTasks.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {todaysTasks.length === 0
-                ? "No tasks for today. Add one to get started!"
-                : "No tasks match your filters. Try adjusting your search or filters."}
+            <div className="text-center py-8">
+              {todaysTasks.length === 0 ? (
+                <div className="space-y-4">
+                  <p className="text-foreground font-medium">
+                    No tasks for today. Add one to get started!
+                  </p>
+                  <div className="flex items-center justify-center">
+                    <div className="text-sm font-semibold bg-blue-100 text-blue-800 px-3 py-1 rounded-full dark:bg-blue-900/30 dark:text-blue-300">
+                      Or
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button
+                      onClick={handlePopulateTestData}
+                      disabled={isLoadingTestData}
+                      variant="outline"
+                      className="bg-cyan-100 text-cyan-800 border-cyan-300 hover:bg-cyan-200 hover:text-cyan-900 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-700 dark:hover:bg-cyan-900/50"
+                    >
+                      {isLoadingTestData ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Populate Test Data
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                    Click &quot;Populate Test Data&quot; to explore the app
+                    features with sample tasks. You can clear them anytime to
+                    start fresh.
+                  </p>
+                </div>
+              ) : (
+                <div className="text-muted-foreground">
+                  No tasks match your filters. Try adjusting your search or
+                  filters.
+                </div>
+              )}
             </div>
           ) : viewMode === "list" ? (
             // List View
