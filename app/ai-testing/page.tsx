@@ -2,19 +2,46 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CompletedTasks } from "@/components/completed-tasks";
 import { TestCases } from "@/components/test-cases";
-import { Card, WarningNote, DateSelector } from "./components";
+import { Card, WarningNote, DateSelector, ClearButton } from "./components";
 import { useTestCases } from "./hooks/useTestCases";
 
 export const dynamic = "force-dynamic";
 
 export default function AITestingPage() {
   const [date, setDate] = useState<Date>(new Date());
-  const { testCases, loadedTaskId, isLoading, handleGenerateTestCase } =
-    useTestCases();
+  const [activeTab, setActiveTab] = useState("today");
+  const [previousTab, setPreviousTab] = useState<string | null>(null);
+  const {
+    testCases,
+    loadedTaskId,
+    isLoading,
+    handleGenerateTestCase,
+    clearTestCases,
+    checkAndClearForNewDate,
+  } = useTestCases();
   const today = new Date();
+
+  // Check and clear test cases when date changes
+  useEffect(() => {
+    checkAndClearForNewDate(date);
+  }, [date, checkAndClearForNewDate]);
+
+  // Check and clear test cases when switching tabs with different dates
+  useEffect(() => {
+    const currentDate = activeTab === "today" ? today : date;
+    checkAndClearForNewDate(currentDate);
+  }, [activeTab, today, date, checkAndClearForNewDate]);
+
+  // Reset date to today when switching to "Tasks by Date" tab
+  useEffect(() => {
+    if (activeTab === "byDate" && previousTab !== "byDate") {
+      setDate(today);
+    }
+    setPreviousTab(activeTab);
+  }, [activeTab, previousTab, today]);
 
   return (
     <div className="container mx-auto py-8">
@@ -26,7 +53,11 @@ export default function AITestingPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="today" className="w-full">
+      <Tabs
+        defaultValue="today"
+        className="w-full"
+        onValueChange={setActiveTab}
+      >
         <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
           <TabsTrigger value="today">Today&apos;s Tasks</TabsTrigger>
           <TabsTrigger value="byDate">Tasks by Date</TabsTrigger>
@@ -37,12 +68,26 @@ export default function AITestingPage() {
             <Card title={`Completed Tasks (${format(today, "MMM dd, yyyy")})`}>
               <CompletedTasks
                 selectedDate={today}
-                onGenerateTest={handleGenerateTestCase}
+                onGenerateTest={(featureName, description, taskId) =>
+                  handleGenerateTestCase(
+                    featureName,
+                    description,
+                    taskId,
+                    today
+                  )
+                }
                 loadedTaskId={loadedTaskId}
                 isLoading={isLoading}
               />
             </Card>
             <Card title="Test Cases">
+              <div className="flex justify-between items-center mb-4">
+                <div></div>
+                <ClearButton
+                  onClear={clearTestCases}
+                  disabled={testCases.length === 0}
+                />
+              </div>
               <WarningNote />
               <TestCases scenarios={testCases} isLoading={isLoading} />
             </Card>
@@ -58,12 +103,21 @@ export default function AITestingPage() {
               </div>
               <CompletedTasks
                 selectedDate={date}
-                onGenerateTest={handleGenerateTestCase}
+                onGenerateTest={(featureName, description, taskId) =>
+                  handleGenerateTestCase(featureName, description, taskId, date)
+                }
                 loadedTaskId={loadedTaskId}
                 isLoading={isLoading}
               />
             </div>
             <Card title="Test Cases">
+              <div className="flex justify-between items-center mb-4">
+                <div></div>
+                <ClearButton
+                  onClear={clearTestCases}
+                  disabled={testCases.length === 0}
+                />
+              </div>
               <WarningNote />
               <TestCases scenarios={testCases} isLoading={isLoading} />
             </Card>
