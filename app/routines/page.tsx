@@ -44,6 +44,8 @@ export default function RoutinesPage() {
     updateItem,
     setDoneToday,
     doneTodayMap,
+    setItemDoneToday,
+    itemDoneTodayMap,
     isLoading,
   } = useRoutines();
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(
@@ -217,7 +219,7 @@ export default function RoutinesPage() {
                     ).map((item: RoutineItemRecord | any) => (
                       <div
                         key={item.id}
-                        className="flex justify-between items-center text-sm p-2 bg-muted/50 rounded-lg"
+                        className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-4 text-sm p-2 bg-muted/50 rounded-lg"
                       >
                         <div>
                           <span className="font-medium">
@@ -228,23 +230,39 @@ export default function RoutinesPage() {
                             {item.description}
                           </p>
                         </div>
-                        <span className="text-muted-foreground">
+                        <span className="text-muted-foreground text-center justify-self-center">
                           {(item as any).planned_duration ??
                             (item as any).plannedDuration}{" "}
                           mins
                         </span>
-                        {!(
-                          (routine as any).is_template ||
-                          (routine as any).isTemplate
-                        ) && (
+                        <div className="flex items-center gap-3 justify-end">
+                          <Checkbox
+                            id={`item-done-${item.id}`}
+                            checked={
+                              !!itemDoneTodayMap[
+                                `${item.id}:${new Date()
+                                  .toISOString()
+                                  .slice(0, 10)}`
+                              ]
+                            }
+                            onCheckedChange={(v) =>
+                              setItemDoneToday(item.id, Boolean(v))
+                            }
+                          />
+                          <label
+                            htmlFor={`item-done-${item.id}`}
+                            className="text-xs"
+                          >
+                            Done
+                          </label>
                           <button
-                            className="ml-3 text-muted-foreground hover:text-foreground"
+                            className="text-muted-foreground hover:text-foreground"
                             onClick={() => openEdit(routine.id, item as any)}
                             aria-label="Edit item"
                           >
                             <Edit className="h-4 w-4" />
                           </button>
-                        )}
+                        </div>
                       </div>
                     ))}
                   </div>

@@ -41,6 +41,9 @@ export function useRoutines() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [routines, setRoutines] = useState<RoutineRecord[]>([]);
   const [doneTodayMap, setDoneTodayMap] = useState<Record<string, boolean>>({});
+  const [itemDoneTodayMap, setItemDoneTodayMap] = useState<
+    Record<string, boolean>
+  >({});
 
   const loadRoutines = useCallback(async () => {
     setIsLoading(true);
@@ -284,6 +287,73 @@ export function useRoutines() {
     [routines]
   );
 
+  const preloadActiveRoutineItemDone = useCallback(async () => {
+    const rid = activeRoutine?.id;
+    if (!rid) return;
+    const today = toISODateOnly(new Date());
+    const items = (activeRoutine as any)?.routine_items || [];
+    const ids: string[] = items.map((i: any) => i.id).filter(Boolean);
+    if (ids.length === 0) return;
+    try {
+      const { data, error } = await supabase
+        .from("routine_item_daily_status")
+        .select("item_id,is_done")
+        .in("item_id", ids)
+        .eq("date", today);
+      if (error) throw error;
+      const map: Record<string, boolean> = {};
+      data?.forEach((row: any) => {
+        map[`${row.item_id}:${today}`] = !!row.is_done;
+      });
+      if (typeof window !== "undefined") {
+        ids.forEach((id) => {
+          const key = `routine_item_done_${id}_${today}`;
+          if (map[`${id}:${today}`] === undefined) {
+            const ls = localStorage.getItem(key);
+            if (ls !== null) map[`${id}:${today}`] = ls === "true";
+          }
+        });
+      }
+      setItemDoneTodayMap((prev) => ({ ...prev, ...map }));
+    } catch (e) {
+      if (typeof window !== "undefined") {
+        const map: Record<string, boolean> = {};
+        ids.forEach((id) => {
+          const key = `routine_item_done_${id}_${today}`;
+          const ls = localStorage.getItem(key);
+          if (ls !== null) map[`${id}:${today}`] = ls === "true";
+        });
+        setItemDoneTodayMap((prev) => ({ ...prev, ...map }));
+      }
+    }
+  }, [activeRoutine, supabase]);
+
+  const setItemDoneToday = useCallback(
+    async (itemId: string, isDone: boolean, date = new Date()) => {
+      const day = toISODateOnly(date);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          `routine_item_done_${itemId}_${day}`,
+          String(isDone)
+        );
+      }
+      setItemDoneTodayMap((m) => ({ ...m, [`${itemId}:${day}`]: isDone }));
+      const { error } = await supabase
+        .from("routine_item_daily_status")
+        .upsert(
+          { item_id: itemId, date: day, is_done: isDone },
+          { onConflict: "item_id,date" as any }
+        );
+      if (error) {
+        console.warn(
+          "routine_item_daily_status upsert failed (fallback local)",
+          error
+        );
+      }
+    },
+    [supabase]
+  );
+
   useEffect(() => {
     (async () => {
       await seedIfEmpty();
@@ -298,9 +368,14 @@ export function useRoutines() {
           [`${rid}:${toISODateOnly(today)}`]: done,
         }));
       }
+      await preloadActiveRoutineItemDone();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    preloadActiveRoutineItemDone();
+  }, [preloadActiveRoutineItemDone]);
 
   return {
     isLoading,
@@ -314,5 +389,7 @@ export function useRoutines() {
     getDoneToday,
     setDoneToday,
     doneTodayMap,
+    setItemDoneToday,
+    itemDoneTodayMap,
   } as const;
 }
