@@ -1,8 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Plus, Check } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Plus, Check, Edit } from "lucide-react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { dummyRoutines, type Routine } from "./dummy-data";
+// Routines are loaded from Supabase via hook
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -21,51 +21,61 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import Link from "next/link";
+// no external link used here
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Trash2, Edit } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  useRoutines,
+  type RoutineRecord,
+  type RoutineItemRecord,
+} from "./hooks/useRoutines";
 
 export const dynamic = "force-dynamic";
 
 export default function RoutinesPage() {
-  const [routines, setRoutines] = useState<Routine[]>([]);
+  const {
+    routines,
+    activeRoutine,
+    setActiveRoutine,
+    addItem,
+    updateItem,
+    setDoneToday,
+    doneTodayMap,
+    isLoading,
+  } = useRoutines();
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(
     null
   );
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [targetRoutineId, setTargetRoutineId] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    activity_name: "",
+    description: "",
+    planned_duration: 60,
+    category: "",
+    time_block: "morning" as "morning" | "afternoon" | "evening",
+    priority: 1,
+  });
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
-  // Initialize routines from localStorage or dummy data
-  useEffect(() => {
-    const savedRoutines = localStorage.getItem("routines");
-    if (savedRoutines) {
-      setRoutines(JSON.parse(savedRoutines));
-    } else {
-      setRoutines(dummyRoutines);
-    }
-  }, []);
+  const todayKey = (rid: string) => {
+    const day = new Date().toISOString().slice(0, 10);
+    return `${rid}:${day}`;
+  };
 
-  // Save routines to localStorage whenever they change
-  useEffect(() => {
-    if (routines.length > 0) {
-      localStorage.setItem("routines", JSON.stringify(routines));
-    }
-  }, [routines]);
-
-  const handleSetActive = (routine: Routine) => {
+  const handleSetActive = (routine: RoutineRecord) => {
     setSelectedRoutineId(routine.id);
     setIsConfirmModalOpen(true);
   };
 
   const confirmSetActive = () => {
     if (selectedRoutineId) {
-      const updatedRoutines = routines.map((routine) => ({
-        ...routine,
-        isActive: routine.id === selectedRoutineId,
-      }));
-      setRoutines(updatedRoutines);
+      setActiveRoutine(selectedRoutineId);
       const selectedRoutine = routines.find((r) => r.id === selectedRoutineId);
       toast.success(`${selectedRoutine?.name} is now your active routine`);
       setSelectedRoutineId(null);
@@ -79,14 +89,54 @@ export default function RoutinesPage() {
   };
 
   const selectedRoutine = routines.find((r) => r.id === selectedRoutineId);
-  const activeRoutine = routines.find((r) => r.isActive);
 
   const isRoutineSelected = (routineId: string) => {
     const isCurrentlySelected = selectedRoutineId === routineId;
-    const isCurrentlyActive = routines.find(
-      (r) => r.id === routineId
-    )?.isActive;
+    const found = routines.find((r) => r.id === routineId) as any;
+    const isCurrentlyActive = found?.is_active || found?.isActive;
     return isCurrentlySelected || isCurrentlyActive;
+  };
+
+  const openAdd = (rid: string) => {
+    setTargetRoutineId(rid);
+    setForm({
+      activity_name: "",
+      description: "",
+      planned_duration: 60,
+      category: "",
+      time_block: "morning",
+      priority: 1,
+    });
+    setIsAddOpen(true);
+  };
+
+  const openEdit = (rid: string, item: any) => {
+    setTargetRoutineId(rid);
+    setEditingItemId(item.id);
+    setForm({
+      activity_name: item.activity_name ?? item.activityName,
+      description: item.description || "",
+      planned_duration: item.planned_duration ?? item.plannedDuration,
+      category: item.category || "",
+      time_block: (item.time_block ?? item.timeBlock) || "morning",
+      priority: item.priority ?? 1,
+    });
+    setIsEditOpen(true);
+  };
+
+  const submitAdd = async () => {
+    if (!targetRoutineId) return;
+    await addItem(targetRoutineId, form);
+    setIsAddOpen(false);
+    toast.success("Item added to routine");
+  };
+
+  const submitEdit = async () => {
+    if (!editingItemId) return;
+    await updateItem(editingItemId, form as any);
+    setIsEditOpen(false);
+    setEditingItemId(null);
+    toast.success("Item updated");
   };
 
   return (
@@ -98,7 +148,7 @@ export default function RoutinesPage() {
             Manage your daily routines and templates
           </p>
         </div>
-        <Button>
+        <Button disabled>
           <Plus className="mr-2 h-4 w-4" />
           Create New Routine
         </Button>
@@ -109,38 +159,92 @@ export default function RoutinesPage() {
         <h2 className="text-xl font-semibold mb-4">Active Routine</h2>
         <div className="grid grid-cols-1 gap-4">
           {routines
-            .filter((routine) => routine.isActive)
+            .filter((routine: any) => routine.is_active || routine.isActive)
             .map((routine) => (
               <Card key={routine.id} className="border-2 border-primary">
                 <CardHeader>
                   <div className="flex justify-between items-center">
                     <CardTitle>{routine.name}</CardTitle>
-                    <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
-                      Active
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="done-today"
+                          checked={
+                            !!(
+                              activeRoutine &&
+                              doneTodayMap[todayKey(activeRoutine.id)]
+                            )
+                          }
+                          onCheckedChange={(v) => {
+                            if (activeRoutine) {
+                              setDoneToday(activeRoutine.id, Boolean(v));
+                            }
+                          }}
+                        />
+                        <label htmlFor="done-today" className="text-xs">
+                          Done today
+                        </label>
+                      </div>
+                      <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
+                        Active
+                      </span>
+                    </div>
                   </div>
                   <CardDescription>
-                    Last updated {format(routine.updatedAt, "MMM d, yyyy")}
+                    Last updated{" "}
+                    {format(
+                      new Date(
+                        (routine as any).updated_at ||
+                          (routine as any).updatedAt ||
+                          (routine as any).created_at ||
+                          new Date().toISOString()
+                      ),
+                      "MMM d, yyyy"
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <div className="flex justify-end mb-3">
+                    <Button size="sm" onClick={() => openAdd(routine.id)}>
+                      Add Item
+                    </Button>
+                  </div>
                   <div className="space-y-2">
-                    {routine.items.map((item) => (
+                    {(
+                      (routine as any).routine_items ||
+                      (routine as any).items ||
+                      []
+                    ).map((item: RoutineItemRecord | any) => (
                       <div
                         key={item.id}
                         className="flex justify-between items-center text-sm p-2 bg-muted/50 rounded-lg"
                       >
                         <div>
                           <span className="font-medium">
-                            {item.activityName}
+                            {(item as any).activity_name ??
+                              (item as any).activityName}
                           </span>
                           <p className="text-xs text-muted-foreground">
                             {item.description}
                           </p>
                         </div>
                         <span className="text-muted-foreground">
-                          {item.plannedDuration} mins
+                          {(item as any).planned_duration ??
+                            (item as any).plannedDuration}{" "}
+                          mins
                         </span>
+                        {!(
+                          (routine as any).is_template ||
+                          (routine as any).isTemplate
+                        ) && (
+                          <button
+                            className="ml-3 text-muted-foreground hover:text-foreground"
+                            onClick={() => openEdit(routine.id, item as any)}
+                            aria-label="Edit item"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -155,7 +259,7 @@ export default function RoutinesPage() {
         <h2 className="text-xl font-semibold mb-4">Templates</h2>
         <div className="flex overflow-x-auto gap-6 pb-4">
           {routines
-            .filter((routine) => routine.isTemplate)
+            .filter((routine: any) => routine.is_template || routine.isTemplate)
             .map((template) => (
               <Card
                 key={template.id}
@@ -171,7 +275,15 @@ export default function RoutinesPage() {
                     <div className="space-y-1">
                       <CardTitle className="text-xl">{template.name}</CardTitle>
                       <CardDescription className="text-sm">
-                        Created on {format(template.createdAt, "MMM d, yyyy")}
+                        Created on{" "}
+                        {format(
+                          new Date(
+                            (template as any).created_at ||
+                              (template as any).createdAt ||
+                              new Date().toISOString()
+                          ),
+                          "MMM d, yyyy"
+                        )}
                       </CardDescription>
                     </div>
                     {isRoutineSelected(template.id) && (
@@ -183,27 +295,45 @@ export default function RoutinesPage() {
                 </CardHeader>
                 <CardContent className="bg-white dark:bg-slate-950 pt-4">
                   <div className="space-y-3">
-                    {template.items.slice(0, 3).map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex justify-between items-center text-sm p-3 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <div className="space-y-1">
-                          <span className="font-medium">
-                            {item.activityName}
+                    {(
+                      (template as any).routine_items ||
+                      (template as any).items ||
+                      []
+                    )
+                      .slice(0, 3)
+                      .map((item: RoutineItemRecord | any) => (
+                        <div
+                          key={item.id}
+                          className="flex justify-between items-center text-sm p-3 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <div className="space-y-1">
+                            <span className="font-medium">
+                              {(item as any).activity_name ??
+                                (item as any).activityName}
+                            </span>
+                            <p className="text-xs text-muted-foreground line-clamp-1">
+                              {item.description}
+                            </p>
+                          </div>
+                          <span className="text-muted-foreground font-medium ml-4">
+                            {(item as any).planned_duration ??
+                              (item as any).plannedDuration}{" "}
+                            mins
                           </span>
-                          <p className="text-xs text-muted-foreground line-clamp-1">
-                            {item.description}
-                          </p>
                         </div>
-                        <span className="text-muted-foreground font-medium ml-4">
-                          {item.plannedDuration} mins
-                        </span>
-                      </div>
-                    ))}
-                    {template.items.length > 3 && (
+                      ))}
+                    {(
+                      (template as any).routine_items ||
+                      (template as any).items ||
+                      []
+                    ).length > 3 && (
                       <div className="text-sm text-muted-foreground text-center pt-2 pb-1">
-                        +{template.items.length - 3} more activities
+                        +
+                        {(
+                          (template as any).routine_items ||
+                          (template as any).items
+                        ).length - 3}{" "}
+                        more activities
                       </div>
                     )}
                   </div>
@@ -218,7 +348,11 @@ export default function RoutinesPage() {
         <h2 className="text-xl font-semibold mb-4">My Routines</h2>
         <div className="flex overflow-x-auto gap-6 pb-4">
           {routines
-            .filter((routine) => !routine.isTemplate && !routine.isActive)
+            .filter(
+              (routine: any) =>
+                !(routine.is_template || routine.isTemplate) &&
+                !(routine.is_active || routine.isActive)
+            )
             .map((routine) => (
               <Card
                 key={routine.id}
@@ -234,7 +368,16 @@ export default function RoutinesPage() {
                     <div className="space-y-1">
                       <CardTitle className="text-xl">{routine.name}</CardTitle>
                       <CardDescription className="text-sm">
-                        Last updated {format(routine.updatedAt, "MMM d, yyyy")}
+                        Last updated{" "}
+                        {format(
+                          new Date(
+                            (routine as any).updated_at ||
+                              (routine as any).updatedAt ||
+                              (routine as any).created_at ||
+                              new Date().toISOString()
+                          ),
+                          "MMM d, yyyy"
+                        )}
                       </CardDescription>
                     </div>
                     {isRoutineSelected(routine.id) && (
@@ -246,27 +389,45 @@ export default function RoutinesPage() {
                 </CardHeader>
                 <CardContent className="bg-white dark:bg-slate-950 pt-4">
                   <div className="space-y-3">
-                    {routine.items.slice(0, 3).map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex justify-between items-center text-sm p-3 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <div className="space-y-1">
-                          <span className="font-medium">
-                            {item.activityName}
+                    {(
+                      (routine as any).routine_items ||
+                      (routine as any).items ||
+                      []
+                    )
+                      .slice(0, 3)
+                      .map((item: RoutineItemRecord | any) => (
+                        <div
+                          key={item.id}
+                          className="flex justify-between items-center text-sm p-3 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <div className="space-y-1">
+                            <span className="font-medium">
+                              {(item as any).activity_name ??
+                                (item as any).activityName}
+                            </span>
+                            <p className="text-xs text-muted-foreground line-clamp-1">
+                              {item.description}
+                            </p>
+                          </div>
+                          <span className="text-muted-foreground font-medium ml-4">
+                            {(item as any).planned_duration ??
+                              (item as any).plannedDuration}{" "}
+                            mins
                           </span>
-                          <p className="text-xs text-muted-foreground line-clamp-1">
-                            {item.description}
-                          </p>
                         </div>
-                        <span className="text-muted-foreground font-medium ml-4">
-                          {item.plannedDuration} mins
-                        </span>
-                      </div>
-                    ))}
-                    {routine.items.length > 3 && (
+                      ))}
+                    {(
+                      (routine as any).routine_items ||
+                      (routine as any).items ||
+                      []
+                    ).length > 3 && (
                       <div className="text-sm text-muted-foreground text-center pt-2 pb-1">
-                        +{routine.items.length - 3} more activities
+                        +
+                        {(
+                          (routine as any).routine_items ||
+                          (routine as any).items
+                        ).length - 3}{" "}
+                        more activities
                       </div>
                     )}
                   </div>
@@ -292,6 +453,179 @@ export default function RoutinesPage() {
               Cancel
             </Button>
             <Button onClick={confirmSetActive}>Set as Active</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Add Item Modal */}
+      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Item</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div>
+              <Label htmlFor="activity_name">Activity Name</Label>
+              <Input
+                id="activity_name"
+                value={form.activity_name}
+                onChange={(e) =>
+                  setForm({ ...form, activity_name: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={form.description}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label htmlFor="duration">Duration (mins)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  value={form.planned_duration}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      planned_duration: Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="time_block">Time</Label>
+                <select
+                  id="time_block"
+                  className="w-full h-10 rounded-md border bg-background px-3"
+                  value={form.time_block}
+                  onChange={(e) =>
+                    setForm({ ...form, time_block: e.target.value as any })
+                  }
+                >
+                  <option value="morning">Morning</option>
+                  <option value="afternoon">Afternoon</option>
+                  <option value="evening">Evening</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="priority">Priority</Label>
+                <Input
+                  id="priority"
+                  type="number"
+                  value={form.priority}
+                  onChange={(e) =>
+                    setForm({ ...form, priority: Number(e.target.value) })
+                  }
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={submitAdd}>Add</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Item Modal */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Item</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div>
+              <Label htmlFor="activity_name_e">Activity Name</Label>
+              <Input
+                id="activity_name_e"
+                value={form.activity_name}
+                onChange={(e) =>
+                  setForm({ ...form, activity_name: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="description_e">Description</Label>
+              <Textarea
+                id="description_e"
+                value={form.description}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label htmlFor="duration_e">Duration (mins)</Label>
+                <Input
+                  id="duration_e"
+                  type="number"
+                  value={form.planned_duration}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      planned_duration: Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="time_block_e">Time</Label>
+                <select
+                  id="time_block_e"
+                  className="w-full h-10 rounded-md border bg-background px-3"
+                  value={form.time_block}
+                  onChange={(e) =>
+                    setForm({ ...form, time_block: e.target.value as any })
+                  }
+                >
+                  <option value="morning">Morning</option>
+                  <option value="afternoon">Afternoon</option>
+                  <option value="evening">Evening</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="priority_e">Priority</Label>
+                <Input
+                  id="priority_e"
+                  type="number"
+                  value={form.priority}
+                  onChange={(e) =>
+                    setForm({ ...form, priority: Number(e.target.value) })
+                  }
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="category_e">Category</Label>
+              <Input
+                id="category_e"
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={submitEdit}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
