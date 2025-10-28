@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Plus, Check, Edit } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -64,6 +64,33 @@ export default function RoutinesPage() {
     priority: 1,
   });
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [isCelebrating, setIsCelebrating] = useState(false);
+  const [confetti, setConfetti] = useState<
+    { left: number; color: string; delay: number; rotate: number }[]
+  >([]);
+
+  const triggerCelebration = () => {
+    const colors = [
+      "#34d399",
+      "#60a5fa",
+      "#fbbf24",
+      "#f472b6",
+      "#22d3ee",
+      "#a78bfa",
+    ];
+    const pieces = Array.from({ length: 28 }).map(() => ({
+      left: Math.random() * 100,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      delay: Math.random() * 0.25,
+      rotate: Math.random() * 360,
+    }));
+    setConfetti(pieces);
+    setIsCelebrating(true);
+    setTimeout(() => {
+      setIsCelebrating(false);
+      setConfetti([]);
+    }, 1400);
+  };
 
   const todayKey = (rid: string) => {
     const day = new Date().toISOString().slice(0, 10);
@@ -174,10 +201,25 @@ export default function RoutinesPage() {
           {routines
             .filter((routine: any) => routine.is_active || routine.isActive)
             .map((routine) => (
-              <Card key={routine.id} className="border-2 border-primary">
+              <Card
+                key={routine.id}
+                className={`border-2 border-primary relative ${
+                  isCelebrating
+                    ? "animate-celebrate-flash ring-2 ring-green-400"
+                    : ""
+                }`}
+              >
                 <CardHeader>
                   <div className="flex justify-between items-center">
-                    <CardTitle>{routine.name}</CardTitle>
+                    <CardTitle
+                      className={`${
+                        isCelebrating
+                          ? "bg-gradient-to-r from-emerald-400 via-sky-400 to-fuchsia-400 bg-clip-text text-transparent"
+                          : ""
+                      }`}
+                    >
+                      {routine.name}
+                    </CardTitle>
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
                         <Checkbox
@@ -191,6 +233,7 @@ export default function RoutinesPage() {
                           onCheckedChange={(v) => {
                             if (activeRoutine) {
                               setDoneToday(activeRoutine.id, Boolean(v));
+                              if (Boolean(v)) triggerCelebration();
                             }
                           }}
                         />
@@ -216,7 +259,35 @@ export default function RoutinesPage() {
                     )}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent
+                  className={`${
+                    isCelebrating
+                      ? "bg-emerald-50/70 dark:bg-emerald-900/20 transition-colors"
+                      : ""
+                  }`}
+                >
+                  {isCelebrating && (
+                    <>
+                      <div className="absolute -top-3 right-3 z-10 ribbon-congrats">
+                        Congratulations 🎉
+                      </div>
+                      <div className="celebrate-shimmer" />
+                      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                        {confetti.map((p, i) => (
+                          <span
+                            key={`conf-${i}`}
+                            className="confetti-piece"
+                            style={{
+                              left: `${p.left}%`,
+                              backgroundColor: p.color,
+                              animationDelay: `${p.delay}s`,
+                              transform: `rotate(${p.rotate}deg)`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-end mb-3">
                     <Button size="sm" onClick={() => openAdd(routine.id)}>
                       Add Item
@@ -230,7 +301,15 @@ export default function RoutinesPage() {
                     ).map((item: RoutineItemRecord | any) => (
                       <div
                         key={item.id}
-                        className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-4 text-sm p-2 bg-muted/50 rounded-lg"
+                        className={`grid grid-cols-[1fr_auto_1fr_auto] items-center gap-4 text-sm p-2 rounded-lg ${
+                          itemDoneTodayMap[
+                            `${item.id}:${new Date()
+                              .toISOString()
+                              .slice(0, 10)}`
+                          ]
+                            ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                            : "bg-muted/50"
+                        }`}
                       >
                         <div>
                           <span className="font-medium">
