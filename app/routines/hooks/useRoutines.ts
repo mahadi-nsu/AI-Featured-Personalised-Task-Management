@@ -238,6 +238,18 @@ export function useRoutines() {
     [supabase, loadRoutines]
   );
 
+  const deleteItem = useCallback(
+    async (itemId: string) => {
+      const { error } = await supabase
+        .from("routine_items")
+        .delete()
+        .eq("id", itemId);
+      if (error) console.error(error);
+      await loadRoutines();
+    },
+    [supabase, loadRoutines]
+  );
+
   const getDoneToday = useCallback(
     async (routineId: string, date = new Date()) => {
       const key = `routine_done_${routineId}_${toISODateOnly(date)}`;
@@ -393,6 +405,7 @@ export function useRoutines() {
     setActiveRoutine,
     addItem,
     updateItem,
+    deleteItem,
     getDoneToday,
     setDoneToday,
     doneTodayMap,

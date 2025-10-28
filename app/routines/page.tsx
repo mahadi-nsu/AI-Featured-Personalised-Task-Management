@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Plus, Check, Edit } from "lucide-react";
+import { Plus, Check, Edit, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import {
   Card,
@@ -32,6 +32,17 @@ import {
   type RoutineRecord,
   type RoutineItemRecord,
 } from "./hooks/useRoutines";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +54,7 @@ export default function RoutinesPage() {
     addItem,
     updateItem,
     setDoneToday,
+    deleteItem,
     doneTodayMap,
     setItemDoneToday,
     itemDoneTodayMap,
@@ -352,6 +364,36 @@ export default function RoutinesPage() {
                           >
                             <Edit className="h-4 w-4" />
                           </button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <button
+                                className="text-destructive hover:opacity-80"
+                                aria-label="Delete item"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Delete routine item?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. The item will be
+                                  permanently removed from this routine.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteItem(item.id)}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
                     ))}
