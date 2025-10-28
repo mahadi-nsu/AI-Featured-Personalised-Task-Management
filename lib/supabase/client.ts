@@ -1,11 +1,8 @@
-import { createBrowserClient } from "@supabase/ssr";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
+// Use the auth-helpers client in client components to keep
+// session cookies in sync with Next.js middleware and server
+// components. This avoids "logged out on refresh" issues.
 export const createClient = () => {
-  console.log("Creating supabase client");
-  console.log("env", process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log("env", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  return createClientComponentClient();
 };
