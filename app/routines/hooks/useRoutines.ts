@@ -191,6 +191,13 @@ export function useRoutines() {
         priority?: number;
       }
     ) => {
+      // Basic validation to prevent empty records
+      if (!item.activity_name || item.activity_name.trim().length === 0) {
+        throw new Error("Activity name is required");
+      }
+      if (!item.description || item.description.trim().length === 0) {
+        throw new Error("Description is required");
+      }
       const { error } = await supabase.from("routine_items").insert({
         routine_id: routineId,
         activity_name: item.activity_name,

@@ -128,17 +128,28 @@ export default function RoutinesPage() {
 
   const submitAdd = async () => {
     if (!targetRoutineId) return;
-    await addItem(targetRoutineId, form);
-    setIsAddOpen(false);
-    toast.success("Item added to routine");
+    try {
+      await addItem(targetRoutineId, form);
+      setIsAddOpen(false);
+      toast.success("Item added to routine");
+    } catch (e: any) {
+      toast.error(e?.message || "Please provide activity name and description");
+    }
   };
 
   const submitEdit = async () => {
     if (!editingItemId) return;
-    await updateItem(editingItemId, form as any);
-    setIsEditOpen(false);
-    setEditingItemId(null);
-    toast.success("Item updated");
+    try {
+      if (!form.activity_name || !form.description) {
+        throw new Error("Activity name and description are required");
+      }
+      await updateItem(editingItemId, form as any);
+      setIsEditOpen(false);
+      setEditingItemId(null);
+      toast.success("Item updated");
+    } catch (e: any) {
+      toast.error(e?.message || "Please provide activity name and description");
+    }
   };
 
   return (
