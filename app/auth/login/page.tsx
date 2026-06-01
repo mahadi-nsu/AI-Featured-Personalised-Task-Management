@@ -106,17 +106,17 @@ export default function LoginPage() {
             <span className="text-xl font-semibold tracking-tight text-white">
               DevTasker
             </span>
+            <span className="inline-flex items-center gap-1.5 self-start rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-medium leading-none text-emerald-300">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              </span>
+              AI-powered productivity
+            </span>
           </motion.div>
 
           <div className="space-y-8">
             <motion.div variants={item} className="space-y-5">
-              <div className="mt-2.5 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3.5 py-1.5 text-xs font-medium text-emerald-300">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                </span>
-                AI-powered productivity
-              </div>
               <h1 className="max-w-xl text-4xl font-bold leading-[1.1] tracking-tight text-white xl:text-5xl">
                 Streamline your day,{" "}
                 <span className="bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
